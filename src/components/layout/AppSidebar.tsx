@@ -108,7 +108,7 @@ const sidebarSections = [
       {
         title: "Reviews & Ratings",
         icon: Star,
-        url: "/reviews",
+        url: "/review-ratings",
       },
       {
         title: "Aerial View",

@@ -7,15 +7,16 @@ import TrackUsers from "./pages/track-users/TrackUsers";
 import Rides from "./pages/rides/Rides";
 import VehicleType from "./pages/vehicles/vehicle-type/VehicleType";
 import UserVehicle from "./pages/vehicles/user-vehicle/UserVehicle";
-import ManageDocuments from "./pages/financial/ManageDocument";
+import ManageDocuments from "./pages/financial/Managedocuments";
+import ReviewRatings from "./pages/management/reviews-ratings/ReviewRatings";
+import PushNotification from "./pages/marketing/PushNotification";
+import Pages from "./pages/settings/Pages";
 
 function App() {
   return (
     <div>
       <Routes>
         <Route element={<DashboardLayout />}>
-          {" "}
-          {/* no children prop here */}
           <Route path="/" element={<Dashboard />} />
           <Route path="/passengers" element={<Passengers />} />
           <Route path="/drivers" element={<Drivers />} />
@@ -24,6 +25,9 @@ function App() {
           <Route path="/vehicle-types" element={<VehicleType />} />
           <Route path="/user-vehicles" element={<UserVehicle />} />
           <Route path="/manage-documents" element={<ManageDocuments />} />
+          <Route path="/review-ratings" element={<ReviewRatings />} />
+          <Route path="/notifications" element={<PushNotification />} />
+          <Route path="/pages" element={<Pages />} />
         </Route>
       </Routes>
     </div>
