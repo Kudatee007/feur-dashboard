@@ -3,6 +3,7 @@ import DashboardLayout from "./components/layout/DashboardLayout";
 import Dashboard from "./pages/dashboard/Dashboard";
 import Passengers from "./pages/passengers/Passengers";
 import Drivers from "./pages/drivers/Drivers";
+import TrackUsers from "./pages/track-users/TrackUsers";
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/passengers" element={<Passengers />} />
           <Route path="/drivers" element={<Drivers />} />
+           <Route path="/track-users" element={<TrackUsers />} />
       </Route>
     </Routes>
     </div>

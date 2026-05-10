@@ -737,7 +737,7 @@ export default function Drivers() {
 
   return (
     <div className="bg-gray-50 font-sans">
-      <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+      <div className="max-w-screen-xl">
 
         {/* Header */}
         <div className="mb-6">

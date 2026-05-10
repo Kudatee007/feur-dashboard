@@ -42,16 +42,6 @@ const sidebarSections = [
     header: "USERS & TRACKING",
     items: [
       {
-        title: "Passengers",
-        icon: Users,
-        url: "/passengers",
-      },
-      {
-        title: "Drivers",
-        icon: CarFront,
-        url: "/drivers",
-      },
-      {
         title: "Track Users",
         icon: MapPinned,
         url: "/track-users",
