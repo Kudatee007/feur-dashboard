@@ -57,11 +57,11 @@ const sidebarSections = [
         icon: Car,
         url: "/rides",
       },
-      {
-        title: "Manual Ride Booking",
-        icon: CreditCard,
-        url: "/manual-booking",
-      },
+      // {
+      //   title: "Manual Ride Booking",
+      //   icon: CreditCard,
+      //   url: "/manual-booking",
+      // },
     ],
   },
 

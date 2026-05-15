@@ -11,6 +11,10 @@ import ManageDocuments from "./pages/financial/Managedocuments";
 import ReviewRatings from "./pages/management/reviews-ratings/ReviewRatings";
 import PushNotification from "./pages/marketing/PushNotification";
 import Pages from "./pages/settings/Pages";
+import SiteSetting from "./pages/settings/SiteSettings";
+import Localization from "./pages/settings/Localization";
+import EarningsReport from "./pages/vehicles/earnings-report/EarningsReport";
+import Statements from "./pages/financial/statements/Statements";
 
 function App() {
   return (
@@ -28,6 +32,10 @@ function App() {
           <Route path="/review-ratings" element={<ReviewRatings />} />
           <Route path="/notifications" element={<PushNotification />} />
           <Route path="/pages" element={<Pages />} />
+          <Route path="/site-settings" element={<SiteSetting />} />
+          <Route path="/localization" element={<Localization />} />
+          <Route path="/earning-reports" element={<EarningsReport />} />
+           <Route path="/statements" element={<Statements />} />
         </Route>
       </Routes>
     </div>

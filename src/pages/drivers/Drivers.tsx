@@ -686,7 +686,6 @@ function DriverModal({ driver: initialDriver, onClose }: { driver: Driver; onClo
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
-
 export default function Drivers() {
   const [filter, setFilter] = useState<FilterType>("All");
   const [search, setSearch] = useState("");
