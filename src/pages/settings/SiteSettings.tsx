@@ -58,7 +58,7 @@ function Section({ icon, title, children }: { icon: React.ReactNode; title: stri
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6">
       <div className="flex items-center gap-2 mb-5">
-        <span className="text-teal-600">{icon}</span>
+        <span className="text-[#3894A3]">{icon}</span>
         <h2 className="font-semibold text-gray-900 text-base">{title}</h2>
       </div>
       {children}
@@ -92,7 +92,7 @@ function SaveButton({ onClick, label = "Save Settings" }: { onClick: () => void;
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-teal-600 hover:bg-teal-700 text-white transition-colors"
+      className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-[#3894A3] hover:bg-teal-700 text-white transition-colors"
     >
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
       {label}
@@ -104,7 +104,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
   return (
     <button
       onClick={() => onChange(!checked)}
-      className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 ${checked ? "bg-teal-600" : "bg-gray-300"}`}
+      className={`relative w-10 h-5 rounded-full transition-colors shrink-0 ${checked ? "bg-[#3894A3]" : "bg-gray-300"}`}
     >
       <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${checked ? "translate-x-5" : "translate-x-0.5"}`} />
     </button>
@@ -143,8 +143,8 @@ export default function SiteSetting() {
   }
 
   return (
-    <div className="bg-gray-50 font-sans">
-      <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+    <div className="bg-[#F1F9FB] font-sans">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
         <div className="mb-6">
           <h1 className="text-xl font-bold text-gray-900">System Settings</h1>
           <p className="text-sm text-gray-500 mt-0.5">Configure platform-wide settings and preferences</p>
@@ -191,7 +191,7 @@ export default function SiteSetting() {
                   placeholder="Add new city..."
                   className="flex-1 px-3 py-2.5 text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent"
                 />
-                <button onClick={addCity} className="px-4 py-2.5 rounded-xl text-sm font-medium bg-teal-600 text-white hover:bg-teal-700 transition-colors">Add</button>
+                <button onClick={addCity} className="px-4 py-2.5 rounded-xl text-sm font-medium bg-[#3894A3] text-white hover:bg-teal-700 transition-colors">Add</button>
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">

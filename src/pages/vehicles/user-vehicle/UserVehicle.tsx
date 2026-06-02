@@ -121,7 +121,7 @@ function AddVehicleModal({ onClose, onAdd }: { onClose: () => void; onAdd: (v: O
         </div>
         <div className="px-5 pb-5 flex gap-2">
           <button onClick={onClose} className="flex-1 py-2.5 rounded-xl text-sm font-medium text-gray-600 border border-gray-200 hover:bg-gray-50 transition-colors">Cancel</button>
-          <button onClick={() => { if (form.owner && form.make && form.model) { onAdd({ owner: form.owner, ownerInitials: form.owner.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase(), ownerColor: "#4F46E5", year: Number(form.year), make: form.make, model: form.model, plateNumber: form.plateNumber, color: form.color, registered: form.registered, lastUsed: null }); onClose(); } }} className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-teal-600 hover:bg-teal-700 text-white transition-colors">Add Vehicle</button>
+          <button onClick={() => { if (form.owner && form.make && form.model) { onAdd({ owner: form.owner, ownerInitials: form.owner.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase(), ownerColor: "#4F46E5", year: Number(form.year), make: form.make, model: form.model, plateNumber: form.plateNumber, color: form.color, registered: form.registered, lastUsed: null }); onClose(); } }} className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-[#3894A3] hover:bg-[#2F7F8C] text-white transition-colors">Add Vehicle</button>
         </div>
       </div>
     </div>
@@ -158,10 +158,10 @@ export default function UserVehicle() {
   };
 
   return (
-    <div className="bg-gray-50 font-sans">
-      <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+    <div className="bg-[#F1F9FB] font-sans">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
         <div className="mb-6">
-          <h1 className="text-xl font-bold text-gray-900">User's Vehicle (Passenger Vehicles)</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">User's Vehicle (Passenger Vehicles)</h1>
           <p className="text-sm text-gray-500 mt-0.5">Manage passenger-owned vehicles used for hiring drivers</p>
         </div>
 
@@ -180,23 +180,23 @@ export default function UserVehicle() {
         </div>
 
         {/* Info banner */}
-        <div className="bg-teal-50 border border-teal-100 rounded-2xl p-4 mb-6 flex items-start gap-3">
-          <svg className="w-5 h-5 text-teal-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10l2 2h8l2-2z" /></svg>
+        <div className="border border-[#3894A3] rounded-2xl p-4 mb-6 flex items-start gap-3">
+          <svg className="w-5 h-5 text-[#3894A3] mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10l2 2h8l2-2z" /></svg>
           <div>
-            <p className="text-sm font-semibold text-teal-800">Passenger Vehicle Management</p>
-            <p className="text-sm text-teal-700 mt-0.5">These are vehicles owned by passengers who want to hire professional drivers through Feur. Ensure all vehicle documents (registration, insurance, roadworthiness) are verified before approval.</p>
+            <p className="text-sm font-semibold text-[#3894A3]">Passenger Vehicle Management</p>
+            <p className="text-sm text-[#2F414F] mt-0.5">These are vehicles owned by passengers who want to hire professional drivers through Feur. Ensure all vehicle documents (registration, insurance, roadworthiness) are verified before approval.</p>
           </div>
         </div>
 
         {/* Table card */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 border-b border-gray-100">
-            <p className="text-sm font-semibold text-gray-700 flex-shrink-0">All Passenger Vehicles</p>
+            <p className="text-sm font-semibold text-gray-700 shrink-0">All Passenger Vehicles</p>
             <div className="flex-1 relative">
               <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
               <input type="text" placeholder="Search vehicles..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-9 pr-4 py-2 text-sm rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent placeholder:text-gray-400" />
             </div>
-            <button onClick={() => setShowAdd(true)} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-teal-600 hover:bg-teal-700 text-white transition-colors flex-shrink-0">
+            <button onClick={() => setShowAdd(true)} className="flex items-center gap-2 px-4 py-2 rounded-[7px] text-sm font-medium bg-[#3894A3] hover:bg-teal-700 text-white transition-colors shrink-0">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
               Add Vehicle
             </button>
@@ -255,7 +255,7 @@ export default function UserVehicle() {
                     <div className="bg-gray-50 rounded-lg p-2"><p className="text-xs text-gray-400">Vehicle</p><p className="font-medium text-gray-900 text-xs">{v.year} {v.make} {v.model}</p></div>
                     <div className="bg-gray-50 rounded-lg p-2"><p className="text-xs text-gray-400">Plate</p><p className="font-medium text-gray-900 text-sm">{v.plateNumber}</p></div>
                   </div>
-                  <button onClick={() => setSelectedVehicle(v)} className="text-xs text-teal-600 font-medium hover:underline flex items-center gap-1">
+                  <button onClick={() => setSelectedVehicle(v)} className="text-xs text-[#3894A3] font-medium hover:underline flex items-center gap-1">
                     View Details <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                   </button>
                 </div>

@@ -154,37 +154,53 @@ const sidebarSections = [
 export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
-        <SidebarContent>
-          {sidebarSections.map((section) => (
-            <SidebarGroup key={section.header} className="p-4">
-              <SidebarGroupLabel className="text-[#2F414F] text-xs font-semibold leading-4 pb-3">
-                {section.header}
-              </SidebarGroupLabel>
+      <SidebarContent className="bg-white">
+        {sidebarSections.map((section) => (
+          <SidebarGroup key={section.header} className="p-4">
+            <SidebarGroupLabel className="text-[#2F414F] text-xs font-semibold leading-4 pb-3">
+              {section.header}
+            </SidebarGroupLabel>
 
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {section.items.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild  className="h-11 px-3">
-                        <NavLink
-                          to={item.url}
-                          className={({ isActive }) =>
-                            isActive ? "bg-muted font-medium" : ""
-                          }
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {section.items.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <NavLink to={item.url}>
+                      {({ isActive }) => (
+                        <SidebarMenuButton
+                          asChild
+                          className={`h-11 px-3 ${
+                            isActive
+                              ? "bg-[#3894A3] text-white font-medium hover:bg-[#3894A3]"
+                              : "hover:bg-transparent text-[#000000]"
+                          }`}
                         >
-                          <item.icon />
-                          <span className="text-[#000000] text-base font-normal leading-6 p-2">
-                            {item.title}
+                          <span className="flex items-center w-full">
+                            <item.icon
+                              className={
+                                isActive ? "text-white" : "text-[#000000]"
+                              }
+                            />
+                            <span
+                              className={`text-base leading-6 p-2 ${
+                                isActive
+                                  ? "text-white"
+                                  : "text-[#000000] font-normal"
+                              }`}
+                            >
+                              {item.title}
+                            </span>
                           </span>
-                        </NavLink>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          ))}
-        </SidebarContent>
+                        </SidebarMenuButton>
+                      )}
+                    </NavLink>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
+      </SidebarContent>
     </Sidebar>
   );
 }

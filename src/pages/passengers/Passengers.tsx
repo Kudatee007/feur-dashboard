@@ -327,7 +327,7 @@ function StatusBadge({ status }: { status: Status }) {
 function Avatar({ passenger, size = "md" }: { passenger: Passenger; size?: "sm" | "md" | "lg" }) {
   const sz = size === "lg" ? "w-12 h-12 text-base" : size === "sm" ? "w-8 h-8 text-xs" : "w-9 h-9 text-sm";
   return (
-    <div className={`${sz} rounded-full flex items-center justify-center font-semibold text-white flex-shrink-0`} style={{ backgroundColor: passenger.color }}>
+    <div className={`${sz} rounded-full flex items-center justify-center font-semibold text-white shrink-0`} style={{ backgroundColor: passenger.color }}>
       {passenger.initials}
     </div>
   );
@@ -605,7 +605,7 @@ export default function Passengers() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans">
+    <div className="min-h-screen font-sans">
       <div className="">
 
         {/* Page Header */}
@@ -633,9 +633,9 @@ export default function Passengers() {
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           {/* Toolbar */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 border-b border-gray-100">
-            <p className="text-sm font-semibold text-gray-700 flex-shrink-0">All Passengers</p>
+            <p className="text-sm font-semibold text-gray-700 shrink-0">All Passengers</p>
 
-            <div className="flex-1 relative">
+            <div className="flex w-64 sm:ml-auto relative">
               <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
@@ -653,7 +653,7 @@ export default function Passengers() {
               )}
             </div>
 
-            <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 flex-shrink-0">
+            <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 shrink-0">
               {(["all", "active", "inactive"] as const).map((f) => (
                 <button
                   key={f}

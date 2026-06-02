@@ -9,7 +9,7 @@ export default function TrackUsers() {
   const [tab, setTab] = useState<MainTab>("passengers");
 
   return (
-    <div className="bg-gray-50 font-sans">
+    <div className="bg-[#F1F9FB] font-sans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
         {/* Page header */}
         <div className="mb-6">
