@@ -11,7 +11,6 @@ import {
 
 import {
   LayoutDashboard,
-  Users,
   MapPinned,
   Car,
   CarFront,
@@ -22,7 +21,6 @@ import {
   Bell,
   Settings,
   Globe,
-  CreditCard,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 

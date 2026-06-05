@@ -48,7 +48,7 @@ const STATUS_LABELS: Record<VerificationStatus, string> = {
 
 // ─── Request Detail Modal
 function RequestDetailModal({ req, onClose, onAction }: { req: VerificationRequest; onClose: () => void; onAction: (id: string, status: VerificationStatus) => void }) {
-  const [noteText, setNoteText] = useState(req.notes ?? "");
+  // const [noteText, setNoteText] = useState(req.notes ?? "");
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>

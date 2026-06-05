@@ -402,6 +402,7 @@ const STATUS_STYLES: Record<RideStatus, string> = {
   "en-route": "bg-teal-50 text-teal-700 border border-teal-200",
   waiting: "bg-amber-50 text-amber-700 border border-amber-200",
   assigned: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+  ongoing: "bg-blue-50 text-blue-700 border border-blue-200",
   completed: "bg-blue-50 text-blue-700",
   cancelled: "bg-gray-100 text-gray-500",
   disputed: "bg-red-50 text-red-600",
@@ -458,23 +459,23 @@ function StarRating({ rating }: { rating: number }) {
   );
 }
 
-function InfoRow({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="flex items-center gap-2">
-      <span className="text-gray-400 flex-shrink-0">{icon}</span>
-      <span className="text-xs text-gray-400 flex-shrink-0">{label}</span>
-      <span className="text-sm font-semibold text-gray-900">{value}</span>
-    </div>
-  );
-}
+// function InfoRow({
+//   icon,
+//   label,
+//   value,
+// }: {
+//   icon: React.ReactNode;
+//   label: string;
+//   value: string;
+// }) {
+//   return (
+//     <div className="flex items-center gap-2">
+//       <span className="text-gray-400 shrink-0">{icon}</span>
+//       <span className="text-xs text-gray-400 shrink-0">{label}</span>
+//       <span className="text-sm font-semibold text-gray-900">{value}</span>
+//     </div>
+//   );
+// }
 
 // ─── Ride Detail Modal ────────────────────────────────────────────────────────
 

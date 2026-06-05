@@ -32,7 +32,7 @@ import {
 // ─── Palette (matches Figma: dark navy + teal) ────────────────────────────────
 const TEAL = "#3894A3";
 const NAVY = "#2F414F";
-const BG = "#F5F7FA";
+// const BG = "#F5F7FA";
 
 // ─── Mock data ────────────────────────────────────────────────────────────────
 const monthlyData = [

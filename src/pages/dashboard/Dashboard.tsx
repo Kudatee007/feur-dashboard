@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
@@ -142,7 +142,7 @@ function ChartTooltip({ active, payload, label, prefix = "" }: any) {
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState<"weekly" | "monthly">("weekly");
+  // const [activeTab, setActiveTab] = useState<"weekly" | "monthly">("weekly");
 
   const stats = [
     {
@@ -310,7 +310,7 @@ export default function Dashboard() {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
             <h2 className="font-semibold text-gray-900 mb-4">Top Locations</h2>
             <div className="space-y-3">
-              {topLocations.map((loc, i) => (
+              {topLocations.map((loc) => (
                 <div key={loc.city} className="flex items-center gap-4">
                   <div className="w-8 h-8 bg-teal-50 rounded-lg flex items-center justify-center shrink-0">
                     <svg className="w-4 h-4 text-[#3894A3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
