@@ -15,6 +15,7 @@ import SiteSetting from "./pages/settings/SiteSettings";
 import Localization from "./pages/settings/Localization";
 import EarningsReport from "./pages/vehicles/earnings-report/EarningsReport";
 import Statements from "./pages/financial/statements/Statements";
+import AerialView from "./pages/management/aeriel-view/AerielView";
 
 function App() {
   return (
@@ -35,7 +36,8 @@ function App() {
           <Route path="/site-settings" element={<SiteSetting />} />
           <Route path="/localization" element={<Localization />} />
           <Route path="/earning-reports" element={<EarningsReport />} />
-           <Route path="/statements" element={<Statements />} />
+          <Route path="/statements" element={<Statements />} />
+          <Route path="/aerial-view" element={<AerialView />} />
         </Route>
       </Routes>
     </div>

@@ -3,7 +3,7 @@ import { Outlet } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 
 import { AppSidebar } from "./AppSidebar";
-import Topbar from "./Topbar";
+import Navbar from "./Navbar";
 
 export default function DashboardLayout() {
   return (
@@ -15,7 +15,7 @@ export default function DashboardLayout() {
           {/* Fixed topbar */}
           <div className="border-b border-[#C7DAD4] py-4 px-2 flex items-center shrink-0">
             <SidebarTrigger />
-            <Topbar />
+            <Navbar />
           </div>
 
           {/* Scrollable content area */}
