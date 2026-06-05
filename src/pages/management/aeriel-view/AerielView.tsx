@@ -101,7 +101,7 @@ const DRIVERS: Driver[] = [
   },
   {
     id: "d4",
-    name: "Kwame Boateng",
+    name: "Kane Boateng",
     initials: "KB",
     color: "#f59e0b",
     avatarBg: "#7c3aed",
