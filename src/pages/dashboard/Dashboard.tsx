@@ -232,7 +232,7 @@ function ActivityIcon({ type }: { type: string }) {
   );
 }
 
-// ─── Chart tooltip
+// ─── Chart tooltip 
 
 function ChartTooltip({ active, payload, label, prefix = "" }: any) {
   if (!active || !payload?.length) return null;
@@ -540,7 +540,7 @@ export default function Dashboard() {
         },
         {
           label: "Gateway Success",
-          rawValue: Math.round(metrics.gatewaySuccess?.rate * 10),
+           rawValue: metrics.gatewaySuccess?.rate ?? 0,  
           suffix: "%",
           sub: `${metrics.gatewaySuccess?.successful}/${metrics.gatewaySuccess?.total} successful`,
           iconBg: "bg-emerald-50",
@@ -562,7 +562,7 @@ export default function Dashboard() {
         },
         {
           label: "Avg Response Time",
-          rawValue: Math.round(metrics.avgResponseTime?.minutes * 10),
+           rawValue: metrics.avgResponseTime?.minutes ?? 0, 
           suffix: " min",
           sub: "Driver pickup",
           iconBg: "bg-teal-50",
