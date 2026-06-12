@@ -32,6 +32,8 @@ const Statements = lazy(
 const AerialView = lazy(
   () => import("./pages/management/aeriel-view/AerielView"),
 );
+import Login from "./pages/login/Login";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 function PageLoader() {
   return (
@@ -66,136 +68,141 @@ function App() {
   return (
     <div>
       <Routes>
-        <Route element={<DashboardLayout />}>
-          <Route
-            path="/"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <Dashboard />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/passengers"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <Passengers />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/drivers"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <Drivers />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/track-users"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <TrackUsers />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/rides"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <Rides />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/vehicle-types"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <VehicleType />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/user-vehicles"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <UserVehicle />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/manage-documents"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <ManageDocuments />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/review-ratings"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <ReviewRatings />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/notifications"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <PushNotification />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/pages"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <Pages />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/site-settings"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <SiteSetting />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/localization"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <Localization />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/earning-reports"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <EarningsReport />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/statements"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <Statements />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/aerial-view"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <AerialView />
-              </Suspense>
-            }
-          />
-        </Route>
+        {/* Public */}
+        <Route path="/login" element={<Login />} />
+
+        {/* <Route element={<ProtectedRoute />}> */}
+          <Route element={<DashboardLayout />}>
+            <Route
+              index
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <Dashboard />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/passengers"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <Passengers />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/drivers"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <Drivers />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/track-users"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <TrackUsers />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/rides"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <Rides />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/vehicle-types"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <VehicleType />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/user-vehicles"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <UserVehicle />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/manage-documents"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <ManageDocuments />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/review-ratings"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <ReviewRatings />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/notifications"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <PushNotification />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/pages"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <Pages />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/site-settings"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <SiteSetting />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/localization"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <Localization />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/earning-reports"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <EarningsReport />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/statements"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <Statements />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/aerial-view"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <AerialView />
+                </Suspense>
+              }
+            />
+          </Route>
+        {/* </Route> */}
       </Routes>
     </div>
   );

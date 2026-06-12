@@ -8,17 +8,17 @@ import Navbar from "./Navbar";
 export default function DashboardLayout() {
   return (
     <SidebarProvider>
-      <div className="relative flex h-screen w-full overflow-hidden">
+      <div className="flex h-screen w-full overflow-hidden">
         <AppSidebar />
 
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-          <div className="border-b border-[#C7DAD4] py-4 px-2 flex items-center shrink-0 absolute top-0 left-0 right-0 bg-white z-10">
+        <div className="flex flex-1 flex-col min-w-0">
+          {/* Header */}
+          <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-[#C7DAD4] bg-white px-4 py-4 shrink-0">
             <SidebarTrigger />
             <Navbar />
-          </div>
-          {/* Fixed topbar */}
+          </header>
 
-          {/* Scrollable content area */}
+          {/* Page Content */}
           <main className="flex-1 overflow-y-auto">
             <Outlet />
           </main>
