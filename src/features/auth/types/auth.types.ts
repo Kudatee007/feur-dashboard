@@ -1,18 +1,22 @@
-// src/features/auth/types/auth.types.ts
 export interface LoginPayload {
   email: string;
   password: string;
 }
 
+export interface AdminUser {
+  id?: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role?: string;
+}
+
 export interface LoginResponse {
-  success: boolean;
+  status: string;
   data: {
-    token: string;
-    admin: {
-      id: string;
-      name: string;
-      email: string;
-      role: string;
-    };
+    message: string;
+    accessToken: string;
+    refreshToken: string;
+    data: AdminUser;
   };
 }

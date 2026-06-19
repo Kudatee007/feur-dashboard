@@ -71,7 +71,7 @@ function App() {
         {/* Public */}
         <Route path="/login" element={<Login />} />
 
-        {/* <Route element={<ProtectedRoute />}> */}
+        <Route element={<ProtectedRoute />}>
           <Route element={<DashboardLayout />}>
             <Route
               index
@@ -202,7 +202,7 @@ function App() {
               }
             />
           </Route>
-        {/* </Route> */}
+        </Route>
       </Routes>
     </div>
   );

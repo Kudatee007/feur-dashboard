@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import {
   BarChart,
   Bar,
@@ -15,10 +15,8 @@ import {
   useReactTable,
   getCoreRowModel,
   getSortedRowModel,
-  getFilteredRowModel,
   flexRender,
   createColumnHelper,
-  type SortingState,
 } from "@tanstack/react-table";
 import {
   Download,
@@ -26,125 +24,24 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  Search,
 } from "lucide-react";
+import { usePayoutsDashboard } from "../../../features/payouts/hooks/usePayouts";
+import type { TopDriverPendingPayout } from "../../../features/payouts/types/payouts.types";
 
-// ─── Palette (matches Figma: dark navy + teal) ────────────────────────────────
+// ─── Palette ──────────────────────────────────────────────────────────────
 const TEAL = "#3894A3";
 const NAVY = "#2F414F";
-// const BG = "#F5F7FA";
 
-// ─── Mock data ────────────────────────────────────────────────────────────────
-const monthlyData = [
-  { month: "Jan", driverPayouts: 22000, platformRevenue: 18000 },
-  { month: "Feb", driverPayouts: 30000, platformRevenue: 20000 },
-  { month: "Mar", driverPayouts: 26000, platformRevenue: 18000 },
-  { month: "Apr", driverPayouts: 38000, platformRevenue: 22000 },
-  { month: "May", driverPayouts: 40000, platformRevenue: 20000 },
-  { month: "Jun", driverPayouts: 42000, platformRevenue: 24000 },
-];
-
-const trendData = [
-  { month: "Jan", total: 40000 },
-  { month: "Feb", total: 48000 },
-  { month: "Mar", total: 44000 },
-  { month: "Apr", total: 62000 },
-  { month: "May", total: 58000 },
-  { month: "Jun", total: 66000 },
-];
-
-interface Driver {
-  rank: number;
-  name: string;
-  logo: string;
-  rating: number;
-  rides: number;
-  earnings: number;
-  status: "Pending" | "Paid" | "Processing";
-}
-
-const driversData: Driver[] = [
-  {
-    rank: 1,
-    name: "Grace Okafor",
-    logo: "GO",
-    rating: 4.9,
-    rides: 512,
-    earnings: 6840,
-    status: "Pending",
-  },
-  {
-    rank: 2,
-    name: "Emeka Nwosu",
-    logo: "EN",
-    rating: 4.8,
-    rides: 489,
-    earnings: 6320,
-    status: "Pending",
-  },
-  {
-    rank: 3,
-    name: "Fatima Bello",
-    logo: "FB",
-    rating: 4.9,
-    rides: 471,
-    earnings: 6100,
-    status: "Processing",
-  },
-  {
-    rank: 4,
-    name: "Tunde Adeyemi",
-    logo: "TA",
-    rating: 4.7,
-    rides: 455,
-    earnings: 5870,
-    status: "Paid",
-  },
-  {
-    rank: 5,
-    name: "Chisom Eze",
-    logo: "CE",
-    rating: 4.8,
-    rides: 440,
-    earnings: 5640,
-    status: "Pending",
-  },
-  {
-    rank: 6,
-    name: "Sola Ogundimu",
-    logo: "SO",
-    rating: 4.6,
-    rides: 418,
-    earnings: 5320,
-    status: "Paid",
-  },
-  {
-    rank: 7,
-    name: "Ngozi Okonkwo",
-    logo: "NO",
-    rating: 4.9,
-    rides: 402,
-    earnings: 5100,
-    status: "Pending",
-  },
-  {
-    rank: 8,
-    name: "Yusuf Aliyu",
-    logo: "YA",
-    rating: 4.7,
-    rides: 388,
-    earnings: 4980,
-    status: "Processing",
-  },
-];
-
-// ─── Formatters ───────────────────────────────────────────────────────────────
-const fmt = (n: number) => "₦" + n.toLocaleString("en-NG");
-
+// ─── Formatters ───────────────────────────────────────────────────────────
+const fmt = (n: number) => "₦" + (n ?? 0).toLocaleString("en-NG");
 const fmtK = (n: number) =>
   n >= 1000 ? `₦${(n / 1000).toFixed(0)}k` : `₦${n}`;
+const fmtPct = (n: number, withSign = false) => {
+  const sign = withSign && n >= 0 ? "+" : "";
+  return `${sign}${n}%`;
+};
 
-// ─── Custom tooltip for bar chart ────────────────────────────────────────────
+// ─── Tooltips ─────────────────────────────────────────────────────────────
 const BarTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   return (
@@ -166,19 +63,20 @@ const BarTooltip = ({ active, payload, label }: any) => {
       >
         {label}
       </p>
-      {payload.map((p: any) => (
-        <p
-          key={p.name}
-          style={{ color: p.color, fontSize: 12, margin: "2px 0" }}
-        >
-          {p.name}: {fmt(p.value)}
-        </p>
-      ))}
+      {payload
+        .filter((p: any) => p.dataKey !== "total")
+        .map((p: any) => (
+          <p
+            key={p.name}
+            style={{ color: p.color, fontSize: 12, margin: "2px 0" }}
+          >
+            {p.name}: {fmt(p.value)}
+          </p>
+        ))}
     </div>
   );
 };
 
-// ─── Custom tooltip for line chart ───────────────────────────────────────────
 const LineTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   return (
@@ -207,34 +105,8 @@ const LineTooltip = ({ active, payload, label }: any) => {
   );
 };
 
-// ─── Status badge ─────────────────────────────────────────────────────────────
-const StatusBadge = ({ status }: { status: Driver["status"] }) => {
-  const styles: Record<Driver["status"], { bg: string; color: string }> = {
-    Pending: { bg: "#FFF4E0", color: "#D97706" },
-    Paid: { bg: "#ECFDF5", color: "#059669" },
-    Processing: { bg: "#EEF2FF", color: "#4F46E5" },
-  };
-  const s = styles[status];
-  return (
-    <span
-      style={{
-        background: s.bg,
-        color: s.color,
-        padding: "3px 10px",
-        borderRadius: 20,
-        fontSize: 11,
-        fontWeight: 600,
-        letterSpacing: "0.02em",
-        whiteSpace: "nowrap",
-      }}
-    >
-      {status}
-    </span>
-  );
-};
-
-// ─── Avatar initials ──────────────────────────────────────────────────────────
-const Avatar = ({ initials, rank }: { initials: string; rank: number }) => {
+// ─── Avatar initials ──────────────────────────────────────────────────────
+const Avatar = ({ name, rank }: { name: string; rank: number }) => {
   const colors = [
     "#2DB5A3",
     "#4F46E5",
@@ -246,6 +118,12 @@ const Avatar = ({ initials, rank }: { initials: string; rank: number }) => {
     "#BE185D",
   ];
   const bg = colors[(rank - 1) % colors.length];
+  const initials = name
+    .split(" ")
+    .map((p) => p[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
   return (
     <div
       style={{
@@ -267,13 +145,138 @@ const Avatar = ({ initials, rank }: { initials: string; rank: number }) => {
   );
 };
 
-// ─── TanStack column helper ───────────────────────────────────────────────────
-const columnHelper = createColumnHelper<Driver>();
+// ─── Skeleton ─────────────────────────────────────────────────────────────
+function SkeletonBlock({ height = 300 }: { height?: number }) {
+  return (
+    <div
+      style={{
+        background: "#fff",
+        borderRadius: 12,
+        padding: "20px",
+        boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+      }}
+      className="animate-pulse"
+    >
+      <div
+        style={{
+          height: 16,
+          width: 160,
+          background: "#F3F4F6",
+          borderRadius: 6,
+          marginBottom: 16,
+        }}
+      />
+      <div style={{ height, background: "#F9FAFB", borderRadius: 8 }} />
+    </div>
+  );
+}
 
-// ─── Main component ───────────────────────────────────────────────────────────
+function SkeletonCard() {
+  return (
+    <div
+      style={{
+        background: "#fff",
+        borderRadius: 12,
+        padding: "18px 20px",
+        boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+        display: "flex",
+        alignItems: "center",
+        gap: 14,
+      }}
+      className="animate-pulse"
+    >
+      <div
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: 10,
+          background: "#F3F4F6",
+          flexShrink: 0,
+        }}
+      />
+      <div style={{ flex: 1 }}>
+        <div
+          style={{
+            height: 10,
+            width: "60%",
+            background: "#F3F4F6",
+            borderRadius: 4,
+            marginBottom: 8,
+          }}
+        />
+        <div
+          style={{
+            height: 18,
+            width: "50%",
+            background: "#F3F4F6",
+            borderRadius: 4,
+            marginBottom: 6,
+          }}
+        />
+        <div
+          style={{
+            height: 10,
+            width: "40%",
+            background: "#F3F4F6",
+            borderRadius: 4,
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ─── Error state ──────────────────────────────────────────────────────────
+function ErrorState({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry: () => void;
+}) {
+  return (
+    <div
+      style={{
+        background: "#fff",
+        borderRadius: 12,
+        padding: "40px 20px",
+        boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+        textAlign: "center",
+      }}
+    >
+      <p style={{ fontSize: 13, color: "#6B7280", margin: "0 0 8px" }}>
+        {message}
+      </p>
+      <button
+        onClick={onRetry}
+        style={{
+          background: "none",
+          border: "none",
+          color: TEAL,
+          fontSize: 12,
+          fontWeight: 600,
+          cursor: "pointer",
+          textDecoration: "underline",
+        }}
+      >
+        Try again
+      </button>
+    </div>
+  );
+}
+
+// ─── TanStack column helper ────────────────────────────────────────────────
+const columnHelper = createColumnHelper<TopDriverPendingPayout>();
+
+// ─── Main component ────────────────────────────────────────────────────────
 const EarningsReport = () => {
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [globalFilter, setGlobalFilter] = useState("");
+  const { data, isLoading, isError, refetch } = usePayoutsDashboard();
+
+  const kpis = data?.kpis;
+  const monthlyData = data?.charts?.monthlyPayoutBreakdown ?? [];
+  const trendData = data?.charts?.collectionsGrowthTrend ?? [];
+  const topDrivers = data?.topDriversPendingPayout ?? [];
+  const gateway = data?.gatewaySummary;
 
   const columns = useMemo(
     () => [
@@ -303,22 +306,20 @@ const EarningsReport = () => {
         header: "Driver",
         cell: (info) => (
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <Avatar
-              initials={info.row.original.logo}
-              rank={info.row.original.rank}
-            />
+            <Avatar name={info.getValue()} rank={info.row.original.rank} />
             <div>
               <div style={{ fontWeight: 600, fontSize: 13, color: NAVY }}>
                 {info.getValue()}
               </div>
               <div style={{ fontSize: 11, color: "#9CA3AF" }}>
-                ★ {info.row.original.rating.toFixed(1)}
+                ★ {info.row.original.rating.toFixed(1)} ·{" "}
+                {info.row.original.location}
               </div>
             </div>
           </div>
         ),
       }),
-      columnHelper.accessor("rides", {
+      columnHelper.accessor("ridesCount", {
         header: "Rides",
         cell: (info) => (
           <span style={{ fontSize: 13, color: "#374151", fontWeight: 500 }}>
@@ -327,78 +328,71 @@ const EarningsReport = () => {
         ),
         size: 80,
       }),
-      columnHelper.accessor("earnings", {
-        header: "Earnings",
+      columnHelper.accessor("pendingAmount", {
+        header: "Pending Payout",
         cell: (info) => (
           <span style={{ fontSize: 13, fontWeight: 700, color: NAVY }}>
             {fmt(info.getValue())}
           </span>
         ),
-        size: 110,
-      }),
-      columnHelper.accessor("status", {
-        header: "Payout Status",
-        cell: (info) => <StatusBadge status={info.getValue()} />,
-        size: 120,
-        enableSorting: false,
+        size: 130,
       }),
     ],
     [],
   );
 
   const table = useReactTable({
-    data: driversData,
+    data: topDrivers,
     columns,
-    state: { sorting, globalFilter },
-    onSortingChange: setSorting,
-    onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
   });
 
-  // ── Stats summary ───────────────────────────────────────────────────────────
-  const stats = [
-    {
-      label: "Total Collected",
-      value: "₦331,000",
-      sub: "↑ +15.3% YTD",
-      subColor: "#10B981",
-      icon: "💰",
-    },
-    {
-      label: "Driver Payouts",
-      value: "₦215,150",
-      sub: "65% disbursed",
-      subColor: "#6B7280",
-      icon: "🚗",
-    },
-    {
-      label: "Platform Revenue",
-      value: "₦115,850",
-      sub: "35% commission",
-      subColor: "#6B7280",
-      icon: "📊",
-    },
-    {
-      label: "This Month",
-      value: "₦67,000",
-      sub: "June 2024",
-      subColor: "#6B7280",
-      icon: "📅",
-    },
-  ];
+  // ── Stats summary (driven by API) ─────────────────────────────────────────
+  const stats = kpis
+    ? [
+        {
+          label: "Total Collected",
+          value: fmt(kpis.totalCollected.amount),
+          sub: `↑ ${fmtPct(kpis.totalCollected.ytdGrowthPercentage, true)} YTD`,
+          subColor: "#10B981",
+          icon: "💰",
+        },
+        {
+          label: "Driver Payouts",
+          value: fmt(kpis.driverPayouts.amount),
+          sub: `${kpis.driverPayouts.percentageDisbursed}% disbursed`,
+          subColor: "#6B7280",
+          icon: "🚗",
+        },
+        {
+          label: "Platform Revenue",
+          value: fmt(kpis.platformRevenue.amount),
+          sub: `${kpis.platformRevenue.percentageCommission}% commission`,
+          subColor: "#6B7280",
+          icon: "📊",
+        },
+        {
+          label: "This Month",
+          value: fmt(kpis.currentMonthRevenue.amount),
+          sub: `${kpis.currentMonthRevenue.month} ${kpis.currentMonthRevenue.year}`,
+          subColor: "#6B7280",
+          icon: "📅",
+        },
+      ]
+    : [];
+
+  // ── Trend % overall (first vs last point) ─────────────────────────────────
+  const trendGrowthPct = useMemo(() => {
+    if (trendData.length < 2) return null;
+    const first = trendData[0].totalCollected;
+    const last = trendData[trendData.length - 1].totalCollected;
+    if (!first) return null;
+    return (((last - first) / first) * 100).toFixed(1);
+  }, [trendData]);
 
   return (
-    <div
-      style={{
-        background: "#F1F9FB",
-        minHeight: "100vh",
-        padding: "24px",
-      }}
-    >
-
-
+    <div style={{ background: "#F1F9FB", minHeight: "100vh", padding: "24px" }}>
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div
         style={{
@@ -437,613 +431,650 @@ const EarningsReport = () => {
         </button>
       </div>
 
-      {/* ── Stat cards ─────────────────────────────────────────────────────── */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-          gap: 16,
-          marginBottom: 24,
-        }}
-      >
-        {stats.map((s) => (
-          <div
-            key={s.label}
-            style={{
-              background: "#fff",
-              borderRadius: 12,
-              padding: "18px 20px",
-              boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-              display: "flex",
-              alignItems: "center",
-              gap: 14,
-            }}
-          >
-            <div
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: 10,
-                background: `${TEAL}18`,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 18,
-                flexShrink: 0,
-              }}
-            >
-              {s.icon}
-            </div>
-            <div>
-              <p
-                style={{
-                  fontSize: 11,
-                  color: "#9CA3AF",
-                  margin: 0,
-                  fontWeight: 500,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em",
-                }}
-              >
-                {s.label}
-              </p>
-              <p
-                style={{
-                  fontSize: 20,
-                  fontWeight: 700,
-                  color: NAVY,
-                  margin: "2px 0",
-                }}
-              >
-                {s.value}
-              </p>
-              <p
-                style={{
-                  fontSize: 11,
-                  color: s.subColor,
-                  margin: 0,
-                  fontWeight: 500,
-                }}
-              >
-                {s.sub}
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* ── Charts row ─────────────────────────────────────────────────────── */}
-      <div style={{ display: "grid", gap: 20, marginBottom: 24 }}>
-        {/* Stacked Bar */}
-        <div
-          style={{
-            background: "#fff",
-            borderRadius: 12,
-            padding: "20px 20px 12px",
-            boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-          }}
-        >
-          <p
-            style={{
-              fontSize: 13,
-              fontWeight: 600,
-              color: NAVY,
-              margin: "0 0 16px",
-            }}
-          >
-            Monthly Payout Breakdown
-          </p>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart
-              data={monthlyData}
-              margin={{ top: 4, right: 8, left: -20, bottom: 0 }}
-              barSize={130}
-            >
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke="#C7DAD4"
-                vertical={true}
-              />
-              <XAxis
-                dataKey="month"
-                tick={{ fontSize: 11, fill: "#9CA3AF" }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis
-                tick={{ fontSize: 11, fill: "#9CA3AF" }}
-                axisLine={false}
-                tickLine={false}
-                tickFormatter={(v) => fmtK(v)}
-              />
-              <Tooltip content={<BarTooltip />} cursor={{ fill: "#F9FAFB" }} />
-              <Legend
-                wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
-                formatter={(value) => (
-                  <span style={{ color: "#6B7280" }}>{value}</span>
-                )}
-              />
-              <Bar
-                dataKey="driverPayouts"
-                name="Driver Payouts"
-                stackId="a"
-                fill={TEAL}
-                radius={[0, 0, 0, 0]}
-              />
-              <Bar
-                dataKey="platformRevenue"
-                name="Platform Revenue"
-                stackId="a"
-                fill={NAVY}
-                radius={[4, 4, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Line Chart */}
-        <div
-          style={{
-            background: "#fff",
-            borderRadius: 12,
-            padding: "20px 20px 12px",
-            boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-          }}
-        >
+      {isError ? (
+        <ErrorState
+          message="Failed to load payouts dashboard"
+          onRetry={() => refetch()}
+        />
+      ) : (
+        <>
+          {/* ── Stat cards ─────────────────────────────────────────────────── */}
           <div
             style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 16,
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+              gap: 16,
+              marginBottom: 24,
             }}
           >
-            <p
-              style={{ fontSize: 13, fontWeight: 600, color: NAVY, margin: 0 }}
-            >
-              Collections Growth Trend
-            </p>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 4,
-                color: "#10B981",
-                fontSize: 11,
-                fontWeight: 600,
-              }}
-            >
-              <TrendingUp size={13} /> +18.4% overall
-            </div>
-          </div>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart
-              data={trendData}
-              margin={{ top: 4, right: 8, left: -20, bottom: 0 }}
-            >
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke="#C7DAD4"
-                vertical={true}
-              />
-              <XAxis
-                dataKey="month"
-                tick={{ fontSize: 11, fill: "#9CA3AF" }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis
-                tick={{ fontSize: 11, fill: "#9CA3AF" }}
-                axisLine={false}
-                tickLine={false}
-                tickFormatter={(v) => fmtK(v)}
-              />
-              <Tooltip content={<LineTooltip />} />
-              <Line
-                type="monotone"
-                dataKey="total"
-                stroke={TEAL}
-                strokeWidth={2.5}
-                dot={{ fill: TEAL, r: 4, strokeWidth: 0 }}
-                activeDot={{ r: 6, fill: TEAL, stroke: "#fff", strokeWidth: 2 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* ── TanStack Table — Top Earning Drivers ───────────────────────────── */}
-      <div
-        style={{
-          background: "#fff",
-          borderRadius: 12,
-          boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-          overflow: "hidden",
-        }}
-      >
-        {/* Table header row */}
-        <div
-          style={{
-            padding: "16px 20px",
-            borderBottom: "1px solid #F3F4F6",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: 10,
-          }}
-        >
-          <p style={{ fontSize: 13, fontWeight: 600, color: NAVY, margin: 0 }}>
-            Top Earning Drivers (Pending Payout)
-          </p>
-
-          {/* Search */}
-          <div
-            style={{
-              position: "relative",
-              display: "flex",
-              alignItems: "center",
-            }}
-          >
-            <Search
-              size={13}
-              style={{ position: "absolute", left: 10, color: "#9CA3AF" }}
-            />
-            <input
-              value={globalFilter}
-              onChange={(e) => setGlobalFilter(e.target.value)}
-              placeholder="Search drivers…"
-              style={{
-                paddingLeft: 30,
-                paddingRight: 12,
-                paddingTop: 7,
-                paddingBottom: 7,
-                border: "1px solid #E5E7EB",
-                borderRadius: 8,
-                fontSize: 12,
-                color: NAVY,
-                outline: "none",
-                width: 180,
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Scrollable table */}
-        <div style={{ overflowX: "auto" }}>
-          <table
-            style={{ width: "100%", borderCollapse: "collapse", minWidth: 520 }}
-          >
-            <thead>
-              {table.getHeaderGroups().map((hg) => (
-                <tr key={hg.id} style={{ background: "#F9FAFB" }}>
-                  {hg.headers.map((header) => (
-                    <th
-                      key={header.id}
-                      onClick={header.column.getToggleSortingHandler()}
+            {isLoading
+              ? Array.from({ length: 4 }).map((_, i) => (
+                  <SkeletonCard key={i} />
+                ))
+              : stats.map((s) => (
+                  <div
+                    key={s.label}
+                    style={{
+                      background: "#fff",
+                      borderRadius: 12,
+                      padding: "18px 20px",
+                      boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 14,
+                    }}
+                  >
+                    <div
                       style={{
-                        padding: "10px 16px",
-                        textAlign: "left",
-                        fontSize: 11,
-                        fontWeight: 600,
-                        color: "#6B7280",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
-                        cursor: header.column.getCanSort()
-                          ? "pointer"
-                          : "default",
-                        userSelect: "none",
-                        whiteSpace: "nowrap",
-                        width:
-                          header.column.getSize() !== 150
-                            ? header.column.getSize()
-                            : undefined,
+                        width: 40,
+                        height: 40,
+                        borderRadius: 10,
+                        background: `${TEAL}18`,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: 18,
+                        flexShrink: 0,
                       }}
                     >
+                      {s.icon}
+                    </div>
+                    <div>
+                      <p
+                        style={{
+                          fontSize: 11,
+                          color: "#9CA3AF",
+                          margin: 0,
+                          fontWeight: 500,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.05em",
+                        }}
+                      >
+                        {s.label}
+                      </p>
+                      <p
+                        style={{
+                          fontSize: 20,
+                          fontWeight: 700,
+                          color: NAVY,
+                          margin: "2px 0",
+                        }}
+                      >
+                        {s.value}
+                      </p>
+                      <p
+                        style={{
+                          fontSize: 11,
+                          color: s.subColor,
+                          margin: 0,
+                          fontWeight: 500,
+                        }}
+                      >
+                        {s.sub}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+          </div>
+
+          {/* ── Charts row ─────────────────────────────────────────────────── */}
+          <div style={{ display: "grid", gap: 20, marginBottom: 24 }}>
+            {isLoading ? (
+              <>
+                <SkeletonBlock />
+                <SkeletonBlock />
+              </>
+            ) : (
+              <>
+                {/* Stacked Bar */}
+                <div
+                  style={{
+                    background: "#fff",
+                    borderRadius: 12,
+                    padding: "20px 20px 12px",
+                    boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                  }}
+                >
+                  <p
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: NAVY,
+                      margin: "0 0 16px",
+                    }}
+                  >
+                    Monthly Payout Breakdown
+                  </p>
+                  {monthlyData.length === 0 ? (
+                    <p
+                      style={{
+                        textAlign: "center",
+                        color: "#9CA3AF",
+                        fontSize: 13,
+                        padding: "40px 0",
+                      }}
+                    >
+                      No data available
+                    </p>
+                  ) : (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart
+                        data={monthlyData}
+                        margin={{ top: 4, right: 8, left: -20, bottom: 0 }}
+                        barSize={130}
+                      >
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          stroke="#C7DAD4"
+                          vertical={true}
+                        />
+                        <XAxis
+                          dataKey="month"
+                          tick={{ fontSize: 11, fill: "#9CA3AF" }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <YAxis
+                          tick={{ fontSize: 11, fill: "#9CA3AF" }}
+                          axisLine={false}
+                          tickLine={false}
+                          tickFormatter={(v) => fmtK(v)}
+                        />
+                        <Tooltip
+                          content={<BarTooltip />}
+                          cursor={{ fill: "#F9FAFB" }}
+                        />
+                        <Legend
+                          wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
+                          formatter={(value) => (
+                            <span style={{ color: "#6B7280" }}>{value}</span>
+                          )}
+                        />
+                        <Bar
+                          dataKey="driverPayout"
+                          name="Driver Payouts"
+                          stackId="a"
+                          fill={TEAL}
+                          radius={[0, 0, 0, 0]}
+                        />
+                        <Bar
+                          dataKey="platformRevenue"
+                          name="Platform Revenue"
+                          stackId="a"
+                          fill={NAVY}
+                          radius={[4, 4, 0, 0]}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+
+                {/* Line Chart */}
+                <div
+                  style={{
+                    background: "#fff",
+                    borderRadius: 12,
+                    padding: "20px 20px 12px",
+                    boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: 16,
+                    }}
+                  >
+                    <p
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: NAVY,
+                        margin: 0,
+                      }}
+                    >
+                      Collections Growth Trend
+                    </p>
+                    {trendGrowthPct !== null && (
                       <div
                         style={{
                           display: "flex",
                           alignItems: "center",
                           gap: 4,
+                          color:
+                            Number(trendGrowthPct) >= 0 ? "#10B981" : "#DC2626",
+                          fontSize: 11,
+                          fontWeight: 600,
                         }}
                       >
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
-                        {header.column.getCanSort() && (
-                          <span style={{ color: "#D1D5DB" }}>
-                            {header.column.getIsSorted() === "asc" ? (
-                              <ArrowUp size={11} style={{ color: TEAL }} />
-                            ) : header.column.getIsSorted() === "desc" ? (
-                              <ArrowDown size={11} style={{ color: TEAL }} />
-                            ) : (
-                              <ArrowUpDown size={11} />
-                            )}
-                          </span>
-                        )}
+                        <TrendingUp size={13} />
+                        {Number(trendGrowthPct) >= 0 ? "+" : ""}
+                        {trendGrowthPct}% overall
                       </div>
-                    </th>
-                  ))}
-                </tr>
-              ))}
-            </thead>
-            <tbody>
-              {table.getRowModel().rows.map((row, i) => (
-                <tr
-                  key={row.id}
-                  style={{
-                    borderTop: "1px solid #F3F4F6",
-                    background: i % 2 === 0 ? "#fff" : "#FAFAFA",
-                    transition: "background 0.15s",
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.background = `${TEAL}08`)
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.background =
-                      i % 2 === 0 ? "#fff" : "#FAFAFA")
-                  }
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} style={{ padding: "12px 16px" }}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </td>
-                  ))}
-                </tr>
-              ))}
+                    )}
+                  </div>
+                  {trendData.length === 0 ? (
+                    <p
+                      style={{
+                        textAlign: "center",
+                        color: "#9CA3AF",
+                        fontSize: 13,
+                        padding: "40px 0",
+                      }}
+                    >
+                      No data available
+                    </p>
+                  ) : (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <LineChart
+                        data={trendData}
+                        margin={{ top: 4, right: 8, left: -20, bottom: 0 }}
+                      >
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          stroke="#C7DAD4"
+                          vertical={true}
+                        />
+                        <XAxis
+                          dataKey="month"
+                          tick={{ fontSize: 11, fill: "#9CA3AF" }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <YAxis
+                          tick={{ fontSize: 11, fill: "#9CA3AF" }}
+                          axisLine={false}
+                          tickLine={false}
+                          tickFormatter={(v) => fmtK(v)}
+                        />
+                        <Tooltip content={<LineTooltip />} />
+                        <Line
+                          type="monotone"
+                          dataKey="totalCollected"
+                          stroke={TEAL}
+                          strokeWidth={2.5}
+                          dot={{ fill: TEAL, r: 4, strokeWidth: 0 }}
+                          activeDot={{
+                            r: 6,
+                            fill: TEAL,
+                            stroke: "#fff",
+                            strokeWidth: 2,
+                          }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
 
-              {table.getRowModel().rows.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={columns.length}
+          {/* ── TanStack Table — Top Earning Drivers ───────────────────────── */}
+          <div
+            style={{
+              background: "#fff",
+              borderRadius: 12,
+              boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                padding: "16px 20px",
+                borderBottom: "1px solid #F3F4F6",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: 10,
+              }}
+            >
+              <p
+                style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: NAVY,
+                  margin: 0,
+                }}
+              >
+                Top Earning Drivers (Pending Payout)
+              </p>
+            </div>
+
+            <div style={{ overflowX: "auto" }}>
+              <table
+                style={{
+                  width: "100%",
+                  borderCollapse: "collapse",
+                  minWidth: 520,
+                }}
+              >
+                <thead>
+                  {table.getHeaderGroups().map((hg) => (
+                    <tr key={hg.id} style={{ background: "#F9FAFB" }}>
+                      {hg.headers.map((header) => (
+                        <th
+                          key={header.id}
+                          onClick={header.column.getToggleSortingHandler()}
+                          style={{
+                            padding: "10px 16px",
+                            textAlign: "left",
+                            fontSize: 11,
+                            fontWeight: 600,
+                            color: "#6B7280",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.05em",
+                            cursor: header.column.getCanSort()
+                              ? "pointer"
+                              : "default",
+                            userSelect: "none",
+                            whiteSpace: "nowrap",
+                            width:
+                              header.column.getSize() !== 150
+                                ? header.column.getSize()
+                                : undefined,
+                          }}
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 4,
+                            }}
+                          >
+                            {flexRender(
+                              header.column.columnDef.header,
+                              header.getContext(),
+                            )}
+                            {header.column.getCanSort() && (
+                              <span style={{ color: "#D1D5DB" }}>
+                                {header.column.getIsSorted() === "asc" ? (
+                                  <ArrowUp size={11} style={{ color: TEAL }} />
+                                ) : header.column.getIsSorted() === "desc" ? (
+                                  <ArrowDown
+                                    size={11}
+                                    style={{ color: TEAL }}
+                                  />
+                                ) : (
+                                  <ArrowUpDown size={11} />
+                                )}
+                              </span>
+                            )}
+                          </div>
+                        </th>
+                      ))}
+                    </tr>
+                  ))}
+                </thead>
+                <tbody>
+                  {isLoading ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <tr key={i} style={{ borderTop: "1px solid #F3F4F6" }}>
+                        {columns.map((_, j) => (
+                          <td key={j} style={{ padding: "12px 16px" }}>
+                            <div
+                              className="animate-pulse"
+                              style={{
+                                height: 14,
+                                background: "#F3F4F6",
+                                borderRadius: 4,
+                                width: "70%",
+                              }}
+                            />
+                          </td>
+                        ))}
+                      </tr>
+                    ))
+                  ) : table.getRowModel().rows.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={columns.length}
+                        style={{
+                          padding: "32px",
+                          textAlign: "center",
+                          color: "#9CA3AF",
+                          fontSize: 13,
+                        }}
+                      >
+                        No drivers found
+                      </td>
+                    </tr>
+                  ) : (
+                    table.getRowModel().rows.map((row, i) => (
+                      <tr
+                        key={row.id}
+                        style={{
+                          borderTop: "1px solid #F3F4F6",
+                          background: i % 2 === 0 ? "#fff" : "#FAFAFA",
+                          transition: "background 0.15s",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.background = `${TEAL}08`)
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.background =
+                            i % 2 === 0 ? "#fff" : "#FAFAFA")
+                        }
+                      >
+                        {row.getVisibleCells().map((cell) => (
+                          <td key={cell.id} style={{ padding: "12px 16px" }}>
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext(),
+                            )}
+                          </td>
+                        ))}
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Footer */}
+            <div
+              style={{
+                padding: "12px 20px",
+                borderTop: "1px solid #F3F4F6",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: 8,
+              }}
+            >
+              <span style={{ fontSize: 12, color: "#9CA3AF" }}>
+                Showing {table.getRowModel().rows.length} of {topDrivers.length}{" "}
+                drivers
+              </span>
+              <span style={{ fontSize: 12, color: "#9CA3AF" }}>
+                Total pending:{" "}
+                <strong style={{ color: NAVY }}>
+                  {fmt(topDrivers.reduce((s, d) => s + d.pendingAmount, 0))}
+                </strong>
+              </span>
+            </div>
+          </div>
+
+          {/* ── Bottom payout summary cards ─────────────────────────────────── */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+              gap: 16,
+              marginTop: 24,
+            }}
+          >
+            {isLoading ? (
+              Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)
+            ) : (
+              <>
+                {/* Pending Payouts */}
+                <div
+                  style={{
+                    background: "#fff",
+                    borderRadius: 12,
+                    padding: "20px",
+                    boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                  }}
+                >
+                  <p
                     style={{
-                      padding: "32px",
-                      textAlign: "center",
+                      fontSize: 11,
                       color: "#9CA3AF",
-                      fontSize: 13,
+                      fontWeight: 500,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                      margin: 0,
                     }}
                   >
-                    No drivers found
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                    Pending Payouts
+                  </p>
+                  <p
+                    style={{
+                      fontSize: 30,
+                      fontWeight: 700,
+                      color: NAVY,
+                      margin: "8px 0 4px",
+                    }}
+                  >
+                    {fmt(gateway?.pendingPayouts.amount ?? 0)}
+                  </p>
+                  <p style={{ fontSize: 12, color: "#6B7280", margin: 0 }}>
+                    {gateway?.pendingPayouts.numberOfDrivers ?? 0} drivers
+                    awaiting disbursement
+                  </p>
+                  <button
+                    style={{
+                      marginTop: 18,
+                      width: "100%",
+                      background: TEAL,
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: 8,
+                      padding: "10px 14px",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Disburse via Gateway
+                  </button>
+                </div>
 
-        {/* Footer */}
-        <div
-          style={{
-            padding: "12px 20px",
-            borderTop: "1px solid #F3F4F6",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: 8,
-          }}
-        >
-          <span style={{ fontSize: 12, color: "#9CA3AF" }}>
-            Showing {table.getRowModel().rows.length} of {driversData.length}{" "}
-            drivers
-          </span>
-          <span style={{ fontSize: 12, color: "#9CA3AF" }}>
-            Total pending:{" "}
-            <strong style={{ color: NAVY }}>
-              {fmt(
-                driversData
-                  .filter((d) => d.status === "Pending")
-                  .reduce((s, d) => s + d.earnings, 0),
-              )}
-            </strong>
-          </span>
-        </div>
-      </div>
+                {/* Gateway Collections */}
+                <div
+                  style={{
+                    background: "#fff",
+                    borderRadius: 12,
+                    padding: "20px",
+                    boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                  }}
+                >
+                  <p
+                    style={{
+                      fontSize: 11,
+                      color: "#9CA3AF",
+                      fontWeight: 500,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                      margin: 0,
+                    }}
+                  >
+                    Gateway Collections
+                  </p>
+                  <p
+                    style={{
+                      fontSize: 30,
+                      fontWeight: 700,
+                      color: NAVY,
+                      margin: "8px 0 4px",
+                    }}
+                  >
+                    {gateway?.collections.percentage ?? 0}%
+                  </p>
+                  <p style={{ fontSize: 12, color: "#6B7280", margin: 0 }}>
+                    {fmt(gateway?.collections.amount ?? 0)} collected
+                  </p>
+                  <div
+                    style={{
+                      marginTop: 18,
+                      height: 6,
+                      background: "#E5E7EB",
+                      borderRadius: 999,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: `${gateway?.collections.percentage ?? 0}%`,
+                        height: "100%",
+                        background: TEAL,
+                        borderRadius: 999,
+                      }}
+                    />
+                  </div>
+                </div>
 
-      {/* Bottom payout summary cards */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-          gap: 16,
-          marginTop: 24,
-        }}
-      >
-        {/* Pending Payouts */}
-        <div
-          style={{
-            background: "#fff",
-            borderRadius: 12,
-            padding: "20px",
-            boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-          }}
-        >
-          <p
-            style={{
-              fontSize: 11,
-              color: "#9CA3AF",
-              fontWeight: 500,
-              textTransform: "uppercase",
-              letterSpacing: "0.05em",
-              margin: 0,
-            }}
-          >
-            Pending Payouts
-          </p>
-
-          <p
-            style={{
-              fontSize: 30,
-              fontWeight: 700,
-              color: NAVY,
-              margin: "8px 0 4px",
-            }}
-          >
-            {fmt(
-              driversData
-                .filter((d) => d.status === "Pending")
-                .reduce((sum, d) => sum + d.earnings, 0),
+                {/* Gateway Disbursed */}
+                <div
+                  style={{
+                    background: "#fff",
+                    borderRadius: 12,
+                    padding: "20px",
+                    boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+                  }}
+                >
+                  <p
+                    style={{
+                      fontSize: 11,
+                      color: "#9CA3AF",
+                      fontWeight: 500,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                      margin: 0,
+                    }}
+                  >
+                    Gateway Disbursed
+                  </p>
+                  <p
+                    style={{
+                      fontSize: 30,
+                      fontWeight: 700,
+                      color: NAVY,
+                      margin: "8px 0 4px",
+                    }}
+                  >
+                    {gateway?.disbursed.percentage ?? 0}%
+                  </p>
+                  <p style={{ fontSize: 12, color: "#6B7280", margin: 0 }}>
+                    {fmt(gateway?.disbursed.amount ?? 0)} paid to drivers
+                  </p>
+                  <div
+                    style={{
+                      marginTop: 18,
+                      height: 6,
+                      background: "#E5E7EB",
+                      borderRadius: 999,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: `${gateway?.disbursed.percentage ?? 0}%`,
+                        height: "100%",
+                        background: "#22C55E",
+                        borderRadius: 999,
+                      }}
+                    />
+                  </div>
+                </div>
+              </>
             )}
-          </p>
-
-          <p
-            style={{
-              fontSize: 12,
-              color: "#6B7280",
-              margin: 0,
-            }}
-          >
-            Awaiting driver disbursement
-          </p>
-
-          <button
-            style={{
-              marginTop: 18,
-              width: "100%",
-              background: TEAL,
-              color: "#fff",
-              border: "none",
-              borderRadius: 8,
-              padding: "10px 14px",
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            Disburse via Gateway
-          </button>
-        </div>
-
-        {/* Gateway Collections */}
-        <div
-          style={{
-            background: "#fff",
-            borderRadius: 12,
-            padding: "20px",
-            boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-          }}
-        >
-          <p
-            style={{
-              fontSize: 11,
-              color: "#9CA3AF",
-              fontWeight: 500,
-              textTransform: "uppercase",
-              letterSpacing: "0.05em",
-              margin: 0,
-            }}
-          >
-            Gateway Collections
-          </p>
-
-          <p
-            style={{
-              fontSize: 30,
-              fontWeight: 700,
-              color: NAVY,
-              margin: "8px 0 4px",
-            }}
-          >
-            100%
-          </p>
-
-          <p
-            style={{
-              fontSize: 12,
-              color: "#6B7280",
-              margin: 0,
-            }}
-          >
-            ₦331,000 collected
-          </p>
-
-          <div
-            style={{
-              marginTop: 18,
-              height: 6,
-              background: "#E5E7EB",
-              borderRadius: 999,
-              overflow: "hidden",
-            }}
-          >
-            <div
-              style={{
-                width: "100%",
-                height: "100%",
-                background: TEAL,
-                borderRadius: 999,
-              }}
-            />
           </div>
-        </div>
-
-        {/* Gateway Disbursed */}
-        <div
-          style={{
-            background: "#fff",
-            borderRadius: 12,
-            padding: "20px",
-            boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-          }}
-        >
-          <p
-            style={{
-              fontSize: 11,
-              color: "#9CA3AF",
-              fontWeight: 500,
-              textTransform: "uppercase",
-              letterSpacing: "0.05em",
-              margin: 0,
-            }}
-          >
-            Gateway Disbursed
-          </p>
-
-          <p
-            style={{
-              fontSize: 30,
-              fontWeight: 700,
-              color: NAVY,
-              margin: "8px 0 4px",
-            }}
-          >
-            85%
-          </p>
-
-          <p
-            style={{
-              fontSize: 12,
-              color: "#6B7280",
-              margin: 0,
-            }}
-          >
-            ₦281,350 paid to drivers
-          </p>
-
-          <div
-            style={{
-              marginTop: 18,
-              height: 6,
-              background: "#E5E7EB",
-              borderRadius: 999,
-              overflow: "hidden",
-            }}
-          >
-            <div
-              style={{
-                width: "85%",
-                height: "100%",
-                background: "#22C55E",
-                borderRadius: 999,
-              }}
-            />
-          </div>
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 };

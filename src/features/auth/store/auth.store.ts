@@ -1,17 +1,19 @@
-// src/features/auth/store/auth.store.ts
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-interface AdminUser {
-  id: string;
-  name: string;
+export interface AdminUser {
+  id?: string;
+  firstName: string;
+  lastName: string;
   email: string;
-  role: string;
+  role?: string;
 }
 
 interface AuthState {
   token: string | null;
   admin: AdminUser | null;
+  _hasHydrated: boolean;
+  setHasHydrated: (val: boolean) => void;
   setAuth: (token: string, admin: AdminUser) => void;
   logout: () => void;
   isAuthenticated: () => boolean;
@@ -22,10 +24,21 @@ export const useAuthStore = create<AuthState>()(
     (set, get) => ({
       token: null,
       admin: null,
+      _hasHydrated: false,
+      setHasHydrated: (val) => set({ _hasHydrated: val }),
       setAuth: (token, admin) => set({ token, admin }),
       logout: () => set({ token: null, admin: null }),
       isAuthenticated: () => !!get().token,
     }),
-    { name: "feur-auth" } // this is the localStorage key your axios reads
+    {
+      name: "feur-auth",
+      partialize: (state) => ({
+        token: state.token,
+        admin: state.admin,
+      }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
+    }
   )
 );
