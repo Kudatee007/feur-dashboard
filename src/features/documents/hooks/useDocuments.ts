@@ -54,7 +54,7 @@ export function useUpdateDriverStatus() {
       driverId: string;
       payload: UpdateStatusPayload;
     }) => documentsService.updateDriverStatus(driverId, payload),
-    onSuccess: (_, { driverId }) => {
+    onSuccess: () => {
       // Invalidate both queue and detail
       queryClient.invalidateQueries({ queryKey: documentKeys.all });
     },

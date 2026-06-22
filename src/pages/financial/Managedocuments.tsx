@@ -8,10 +8,8 @@ import {
   useUpdatePassengerStatus,
 } from "../../features/documents/hooks/useDocuments";
 import type {
-  VerificationStatus,
   DriverQueueItem,
   PassengerQueueItem,
-  DriverDocuments,
   UpdateStatusPayload,
 } from "../../features/documents/types/documents.types";
 
@@ -844,7 +842,7 @@ function DriverQueueTab() {
   const { mutate: updateStatus, isPending } = useUpdateDriverStatus();
 
   const kpis = data?.kpis;
-  const allDrivers = data?.queue ?? [];
+  const allDrivers: DriverQueueItem[] = data?.queue ?? [];
   const pagination = data?.pagination;
 
   const filtered =
@@ -1278,7 +1276,7 @@ function PassengerQueueTab() {
   const { mutate: updateStatus, isPending } = useUpdatePassengerStatus();
 
   const kpis = data?.kpis;
-  const allPassengers = data?.queue ?? [];
+  const allPassengers: PassengerQueueItem[] = data?.queue ?? [];
   const pagination = data?.pagination;
 
   const filtered =

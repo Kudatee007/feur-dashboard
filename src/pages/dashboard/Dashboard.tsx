@@ -20,6 +20,20 @@ import {
 } from "../../features/dashboard/hooks/useDashboard";
 import type { RideStatusItem } from "../../features/dashboard/types/dashboard.types";
 
+type RideStatusChartItem = {
+  name: string;
+  value: number;
+  color: string;
+};
+
+type RecentActivityListItem = {
+  type: string;
+  label: string;
+  data?: any;
+  time: string;
+};
+
+
 // ─── Skeletons ────────────────────────────────────────────────────────────────
 
 function SkeletonCard() {
@@ -232,7 +246,7 @@ function ActivityIcon({ type }: { type: string }) {
   );
 }
 
-// ─── Chart tooltip 
+// ─── Chart tooltip
 
 function ChartTooltip({ active, payload, label, prefix = "" }: any) {
   if (!active || !payload?.length) return null;
@@ -540,7 +554,7 @@ export default function Dashboard() {
         },
         {
           label: "Gateway Success",
-           rawValue: metrics.gatewaySuccess?.rate ?? 0,  
+          rawValue: metrics.gatewaySuccess?.rate ?? 0,
           suffix: "%",
           sub: `${metrics.gatewaySuccess?.successful}/${metrics.gatewaySuccess?.total} successful`,
           iconBg: "bg-emerald-50",
@@ -562,7 +576,7 @@ export default function Dashboard() {
         },
         {
           label: "Avg Response Time",
-           rawValue: metrics.avgResponseTime?.minutes ?? 0, 
+          rawValue: metrics.avgResponseTime?.minutes ?? 0,
           suffix: " min",
           sub: "Driver pickup",
           iconBg: "bg-teal-50",
@@ -588,25 +602,30 @@ export default function Dashboard() {
   // ── Chart data mapped to Recharts keys ────────────────────────────────────
 
   const weeklyRidesData =
-    charts?.weeklyRides?.map((d) => ({ day: d.day, rides: d.count })) ?? [];
+    charts?.weeklyRides?.map((d: { day: string; count: number }) => ({
+      day: d.day,
+      rides: d.count,
+    })) ?? [];
   const monthlyRevenueData =
-    charts?.monthlyRevenue?.map((d) => ({
+    charts?.monthlyRevenue?.map((d: { month: string; revenue: number }) => ({
       month: d.month,
       revenue: d.revenue,
     })) ?? [];
   const peakHoursData =
-    charts?.peakHours?.map((d) => ({ hour: d.hour, rides: d.count })) ?? [];
-  const rideStatusData = (charts?.rideStatus ?? []).map(
-    (d: RideStatusItem) => ({
-      name: d.status.charAt(0).toUpperCase() + d.status.slice(1),
-      value: d.percentage,
-      color: getStatusColor(d.status),
-    }),
-  );
+    charts?.peakHours?.map((d: { hour: string; count: number }) => ({
+      hour: d.hour,
+      rides: d.count,
+    })) ?? [];
+  const rideStatusData: RideStatusChartItem[] = (charts?.rideStatus ?? []).map((d: RideStatusItem) => ({
+    name: d.status.charAt(0).toUpperCase() + d.status.slice(1),
+    value: d.percentage,
+    color: getStatusColor(d.status),
+  }));
 
-  const topLocations = lists?.topLocations ?? [];
+  const topLocations: { address: string; count: number }[] =
+    lists?.topLocations ?? [];
   const maxCount = topLocations[0]?.count ?? 1;
-  const recentActivity = lists?.recentActivity ?? [];
+  const recentActivity: RecentActivityListItem[] = lists?.recentActivity ?? [];
 
   return (
     <div className="bg-[#F1F9FB] font-sans">
