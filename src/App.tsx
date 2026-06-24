@@ -27,7 +27,7 @@ const EarningsReport = lazy(
   () => import("./pages/vehicles/earnings-report/EarningsReport"),
 );
 const Statements = lazy(
-  () => import("./pages/financial/statements/Statements"),
+  () => import("./pages/financial/Statements"),
 );
 const AerialView = lazy(
   () => import("./pages/management/aeriel-view/AerielView"),
