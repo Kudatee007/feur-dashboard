@@ -117,7 +117,7 @@ const sidebarSections = [
   },
 
   {
-    header: "MARKETING",
+    header: "SETTINGS",
     items: [
       {
         title: "Push Notification",
@@ -132,21 +132,21 @@ const sidebarSections = [
     ],
   },
 
-  {
-    header: "SETTINGS",
-    items: [
-      {
-        title: "Localization",
-        icon: Globe,
-        url: "/localization",
-      },
-      {
-        title: "Pages",
-        icon: FileText,
-        url: "/pages",
-      },
-    ],
-  },
+  // {
+  //   header: "SETTINGS",
+  //   items: [
+  //     {
+  //       title: "Localization",
+  //       icon: Globe,
+  //       url: "/localization",
+  //     },
+  //     {
+  //       title: "Pages",
+  //       icon: FileText,
+  //       url: "/pages",
+  //     },
+  //   ],
+  // },
 ];
 
 export function AppSidebar() {

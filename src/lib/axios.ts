@@ -3,7 +3,7 @@ import axios from "axios";
 import { useAuthStore } from "../features/auth/store/auth.store";
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL ?? "https://feur-backend-q4jq.onrender.com",
+  baseURL: import.meta.env.VITE_API_BASE_URL,
   headers: { "Content-Type": "application/json" },
   timeout: 15000,
 });
@@ -25,7 +25,7 @@ api.interceptors.response.use(
       window.location.href = "/login";
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 export default api;
