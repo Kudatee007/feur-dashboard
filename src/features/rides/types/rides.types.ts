@@ -153,6 +153,8 @@ export interface VehicleRef {
 export interface RouteRef {
   pickup?: string;
   dropoff?: string;
+  pickupCoords?: { lat: number; lng: number };
+  dropoffCoords?: { lat: number; lng: number };
 }
 
 // ─── Active Rides ─────────────────────────────────────────────────────────────

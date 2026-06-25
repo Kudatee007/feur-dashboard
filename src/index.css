@@ -122,6 +122,32 @@ body {
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* Better Leaflet zoom controls */
+.leaflet-control-zoom {
+  border: none !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+  border-radius: 12px !important;
+  overflow: hidden;
+}
+
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out {
+  width: 36px !important;
+  height: 36px !important;
+  line-height: 36px !important;
+  font-size: 18px !important;
+  color: #374151 !important;
+  background: white !important;
+  border: none !important;
+  font-weight: 400 !important;
+}
+
+.leaflet-control-zoom-in:hover,
+.leaflet-control-zoom-out:hover {
+  background: #f3f4f6 !important;
+  color: #3894a3 !important;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

@@ -1573,50 +1573,114 @@ function statusLabel(s: string) {
 function MapRecenter({ lat, lng }: { lat: number; lng: number }) {
   const map = useMap();
   useEffect(() => {
-    map.setView([lat, lng], 15, { animate: true, duration: 0.8 });
+    map.setView([lat, lng], 16, { animate: true, duration: 0.8 });
   }, [lat, lng]);
   return null;
 }
 
+// function makeDriverIcon() {
+//   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="56" viewBox="0 0 48 56">
+//     <circle cx="24" cy="22" r="20" fill="#3894A3" stroke="#2d7a8a" stroke-width="2.5"/>
+//     <circle cx="24" cy="22" r="17" fill="#3894A3" opacity="0.25"/>
+//     <text x="24" y="28" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" font-weight="700" fill="white">DRV</text>
+//     <polygon points="24,48 17,36 31,36" fill="#3894A3" stroke="#2d7a8a" stroke-width="1.5" stroke-linejoin="round"/>
+//   </svg>`;
+//   return L.divIcon({
+//     html: svg,
+//     className: "",
+//     iconSize: [48, 56],
+//     iconAnchor: [24, 56],
+//     popupAnchor: [0, -56],
+//   });
+// }
+
+// ─── Driver icon — car shape ──────────────────────────────────────────────────
 function makeDriverIcon() {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="56" viewBox="0 0 48 56">
-    <circle cx="24" cy="22" r="20" fill="#3894A3" stroke="#2d7a8a" stroke-width="2.5"/>
-    <circle cx="24" cy="22" r="17" fill="#3894A3" opacity="0.25"/>
-    <text x="24" y="28" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" font-weight="700" fill="white">DRV</text>
-    <polygon points="24,48 17,36 31,36" fill="#3894A3" stroke="#2d7a8a" stroke-width="1.5" stroke-linejoin="round"/>
-  </svg>`;
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="52" height="60" viewBox="0 0 52 60">
+      <!-- Pin body -->
+      <circle cx="26" cy="24" r="22" fill="#3894A3" stroke="#fff" stroke-width="3"/>
+      <!-- Car icon inside -->
+      <g transform="translate(13, 12)">
+        <!-- Car body -->
+        <rect x="1" y="7" width="24" height="11" rx="2" fill="white"/>
+        <!-- Car roof/cabin -->
+        <path d="M5 7 L8 2 L18 2 L21 7Z" fill="white"/>
+        <!-- Left wheel -->
+        <circle cx="7" cy="18" r="2.5" fill="#3894A3" stroke="white" stroke-width="1"/>
+        <!-- Right wheel -->
+        <circle cx="19" cy="18" r="2.5" fill="#3894A3" stroke="white" stroke-width="1"/>
+        <!-- Windshield -->
+        <path d="M8.5 6.5 L10 3 L16 3 L17.5 6.5Z" fill="#3894A3" opacity="0.4"/>
+      </g>
+      <!-- Pin pointer -->
+      <polygon points="26,52 19,38 33,38" fill="#3894A3" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
+    </svg>`;
   return L.divIcon({
     html: svg,
     className: "",
-    iconSize: [48, 56],
-    iconAnchor: [24, 56],
-    popupAnchor: [0, -56],
+    iconSize: [52, 60],
+    iconAnchor: [26, 60],
+    popupAnchor: [0, -62],
   });
 }
 
+// ─── Passenger icon — person shape ───────────────────────────────────────────
+// function makePassengerIcon() {
+//   const svg = `
+//     <svg xmlns="http://www.w3.org/2000/svg" width="44" height="52" viewBox="0 0 44 52">
+//       <!-- Pin body -->
+//       <circle cx="22" cy="20" r="19" fill="#6366f1" stroke="#fff" stroke-width="3"/>
+//       <!-- Person head -->
+//       <circle cx="22" cy="13" r="5" fill="white"/>
+//       <!-- Person body -->
+//       <path d="M12 28 C12 22 32 22 32 28 L32 30 L12 30 Z" fill="white"/>
+//       <!-- Pin pointer -->
+//       <polygon points="22,48 16,34 28,34" fill="#6366f1" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
+//     </svg>`;
+//   return L.divIcon({
+//     html: svg,
+//     className: "",
+//     iconSize: [44, 52],
+//     iconAnchor: [22, 52],
+//     popupAnchor: [0, -54],
+//   });
+// }
+
+// ─── Pickup icon — green location pin ────────────────────────────────────────
 function makePickupIcon() {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28">
-    <circle cx="14" cy="14" r="12" fill="#10b981" stroke="#fff" stroke-width="2.5"/>
-    <circle cx="14" cy="14" r="5" fill="white"/>
-  </svg>`;
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="44" viewBox="0 0 36 44">
+      <circle cx="18" cy="18" r="16" fill="#10b981" stroke="#fff" stroke-width="3"/>
+      <!-- Checkmark -->
+      <polyline points="10,18 16,24 27,12" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <polygon points="18,42 12,30 24,30" fill="#10b981" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
+    </svg>`;
   return L.divIcon({
     html: svg,
     className: "",
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
+    iconSize: [36, 44],
+    iconAnchor: [18, 44],
+    popupAnchor: [0, -46],
   });
 }
 
+// ─── Dropoff icon — red location pin ─────────────────────────────────────────
 function makeDropoffIcon() {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28">
-    <circle cx="14" cy="14" r="12" fill="#ef4444" stroke="#fff" stroke-width="2.5"/>
-    <circle cx="14" cy="14" r="5" fill="white"/>
-  </svg>`;
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="44" viewBox="0 0 36 44">
+      <circle cx="18" cy="18" r="16" fill="#ef4444" stroke="#fff" stroke-width="3"/>
+      <!-- Flag/destination symbol -->
+      <rect x="11" y="10" width="2" height="16" fill="white" rx="1"/>
+      <path d="M13 10 L24 13 L13 17 Z" fill="white"/>
+      <polygon points="18,42 12,30 24,30" fill="#ef4444" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
+    </svg>`;
   return L.divIcon({
     html: svg,
     className: "",
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
+    iconSize: [36, 44],
+    iconAnchor: [18, 44],
+    popupAnchor: [0, -46],
   });
 }
 
@@ -1693,7 +1757,12 @@ interface TrackingModalProps {
   ride: {
     rideId?: string;
     status: string;
-    route?: { pickup?: string; dropoff?: string } | null;
+    route?: {
+      pickup?: string;
+      dropoff?: string;
+      pickupCoords?: { lat: number; lng: number }; // ← add this
+      dropoffCoords?: { lat: number; lng: number };
+    } | null;
     fareDetails?: { fare?: number } | null;
     distance?: number;
     startedAt?: string | null;
@@ -1718,6 +1787,8 @@ function TrackingModal({ ride, onClose }: TrackingModalProps) {
 
   const activity = activityText(ride.status, driverFirst);
   const isEnRoute = ["pending", "accepted"].includes(ride.status);
+
+  console.log("ride.route:", JSON.stringify(ride.route, null, 2));
 
   return (
     <div
@@ -1847,20 +1918,21 @@ function TrackingModal({ ride, onClose }: TrackingModalProps) {
 
             <MapContainer
               center={mapCenter}
-              zoom={15}
+              zoom={16}
+              maxZoom={19}
               style={{ height: "100%", width: "100%" }}
               zoomControl={true}
             >
               <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
               />
 
               {hasLocation && (
                 <>
                   <MapRecenter lat={location!.lat} lng={location!.lng} />
 
-                  {/* Driver marker */}
+                  {/* ── Driver — moves live ─────────────────────────────────── */}
                   <Marker
                     position={[location!.lat, location!.lng]}
                     icon={makeDriverIcon()}
@@ -1869,71 +1941,94 @@ function TrackingModal({ ride, onClose }: TrackingModalProps) {
                       <div
                         style={{
                           fontFamily: "system-ui",
-                          minWidth: 150,
+                          minWidth: 160,
                           fontSize: 13,
                         }}
                       >
-                        <p style={{ fontWeight: 700, margin: "0 0 2px" }}>
-                          {location!.name}
-                        </p>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                            marginBottom: 6,
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: 8,
+                              height: 8,
+                              borderRadius: "50%",
+                              background: "#10b981",
+                            }}
+                          />
+                          <p style={{ fontWeight: 700, margin: 0 }}>
+                            {location!.name}
+                          </p>
+                        </div>
                         <p
-                          style={{ color: "#6b7280", fontSize: 11, margin: 0 }}
+                          style={{
+                            color: "#6b7280",
+                            fontSize: 11,
+                            margin: "0 0 4px",
+                          }}
                         >
                           {location!.address}
                         </p>
                         <p
-                          style={{
-                            color: "#9ca3af",
-                            fontSize: 11,
-                            margin: "4px 0 0",
-                          }}
+                          style={{ color: "#9ca3af", fontSize: 11, margin: 0 }}
                         >
                           Updated {relativeTime(location!.lastSeen)}
                         </p>
                       </div>
                     </Popup>
                   </Marker>
+
+                  {/* ── Pickup — fixed, never moves ─────────────────────────── */}
+                  {ride.route?.pickupCoords && (
+                    <Marker
+                      position={[
+                        ride.route.pickupCoords.lat,
+                        ride.route.pickupCoords.lng,
+                      ]}
+                      icon={makePickupIcon()}
+                    >
+                      <Popup>
+                        <p
+                          style={{
+                            fontSize: 12,
+                            fontFamily: "system-ui",
+                            margin: 0,
+                          }}
+                        >
+                          📍 <strong>Pickup:</strong> {ride.route.pickup}
+                        </p>
+                      </Popup>
+                    </Marker>
+                  )}
+
+                  {/* ── Dropoff — fixed, never moves ────────────────────────── */}
+                  {ride.route?.dropoffCoords && (
+                    <Marker
+                      position={[
+                        ride.route.dropoffCoords.lat,
+                        ride.route.dropoffCoords.lng,
+                      ]}
+                      icon={makeDropoffIcon()}
+                    >
+                      <Popup>
+                        <p
+                          style={{
+                            fontSize: 12,
+                            fontFamily: "system-ui",
+                            margin: 0,
+                          }}
+                        >
+                          🏁 <strong>Dropoff:</strong> {ride.route.dropoff}
+                        </p>
+                      </Popup>
+                    </Marker>
+                  )}
                 </>
-              )}
-
-              {/* Pickup marker — approximate center since we don't have coords */}
-              {hasLocation && ride.route?.pickup && (
-                <Marker
-                  position={[location!.lat + 0.005, location!.lng + 0.003]}
-                  icon={makePickupIcon()}
-                >
-                  <Popup>
-                    <p
-                      style={{
-                        fontSize: 12,
-                        margin: 0,
-                        fontFamily: "system-ui",
-                      }}
-                    >
-                      <strong>Pickup:</strong> {ride.route.pickup}
-                    </p>
-                  </Popup>
-                </Marker>
-              )}
-
-              {/* Dropoff marker */}
-              {hasLocation && ride.route?.dropoff && (
-                <Marker
-                  position={[location!.lat - 0.008, location!.lng - 0.005]}
-                  icon={makeDropoffIcon()}
-                >
-                  <Popup>
-                    <p
-                      style={{
-                        fontSize: 12,
-                        margin: 0,
-                        fontFamily: "system-ui",
-                      }}
-                    >
-                      <strong>Dropoff:</strong> {ride.route.dropoff}
-                    </p>
-                  </Popup>
-                </Marker>
               )}
             </MapContainer>
 
