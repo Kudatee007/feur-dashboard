@@ -1,24 +1,18 @@
 // src/features/aerial/pages/AerialView.tsx
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import {
+  Map,
+  AdvancedMarker,
+  InfoWindow,
+  useMap,
+} from "@vis.gl/react-google-maps";
 import { useAerialView } from "../../../features/aerial/hooks/useAerial";
 import { useDebouncedValue } from "../../../hooks/useDebouncedValue";
 import type {
   AerialDriver,
   AerialDriverStatus,
 } from "../../../features/aerial/types/aerial.types";
-
-// ─── Fix default marker icons (Leaflet + Vite) ────────────────────────────────
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-});
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -49,7 +43,15 @@ function initialsOf(name: string) {
     .toUpperCase();
 }
 
-// ─── Status config ─────────────────────────────────────────────────────────────
+function relativeTime(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  return `${Math.floor(mins / 60)}h ago`;
+}
+
+// ─── Status config ────────────────────────────────────────────────────────────
 
 const STATUS_CONFIG: Record<
   AerialDriverStatus,
@@ -58,8 +60,8 @@ const STATUS_CONFIG: Record<
     color: string;
     bg: string;
     dot: string;
-    mapColor: string;
-    mapBorder: string;
+    pinBg: string;
+    pinBorder: string;
   }
 > = {
   available: {
@@ -67,273 +69,153 @@ const STATUS_CONFIG: Record<
     color: "text-emerald-700",
     bg: "bg-emerald-50 border-emerald-200",
     dot: "#10b981",
-    mapColor: "#10b981",
-    mapBorder: "#059669",
+    pinBg: "#10b981",
+    pinBorder: "#059669",
   },
   on_ride: {
     label: "On Ride",
     color: "text-amber-700",
     bg: "bg-amber-50 border-amber-200",
     dot: "#f59e0b",
-    mapColor: "#f59e0b",
-    mapBorder: "#d97706",
+    pinBg: "#f59e0b",
+    pinBorder: "#d97706",
   },
   offline: {
     label: "Offline",
     color: "text-gray-500",
     bg: "bg-gray-100 border-gray-200",
     dot: "#9ca3af",
-    mapColor: "#9ca3af",
-    mapBorder: "#6b7280",
+    pinBg: "#9ca3af",
+    pinBorder: "#6b7280",
   },
 };
 
-// ─── Custom map marker ────────────────────────────────────────────────────────
+// ─── Driver Marker ────────────────────────────────────────────────────────────
 
-function createDriverIcon(status: AerialDriverStatus, initials: string) {
-  const c = STATUS_CONFIG[status];
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="44" height="50" viewBox="0 0 44 50">
-      <circle cx="22" cy="22" r="20" fill="${c.mapColor}" stroke="${c.mapBorder}" stroke-width="2.5"/>
-      <circle cx="22" cy="22" r="18" fill="${c.mapColor}" opacity="0.3"/>
-      <text x="22" y="27" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="white">${initials}</text>
-      <polygon points="22,44 16,34 28,34" fill="${c.mapColor}" stroke="${c.mapBorder}" stroke-width="1.5" stroke-linejoin="round"/>
-    </svg>
-  `;
-  return L.divIcon({
-    html: svg,
-    className: "",
-    iconSize: [44, 50],
-    iconAnchor: [22, 50],
-    popupAnchor: [0, -50],
-  });
-}
-
-// ─── Popup style injection ────────────────────────────────────────────────────
-
-const POPUP_STYLE = `
-  .driver-popup .leaflet-popup-content-wrapper {
-    padding: 0; border-radius: 20px; overflow: hidden;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.18); border: none;
-  }
-  .driver-popup .leaflet-popup-content { margin: 0; width: auto !important; }
-  .driver-popup .leaflet-popup-tip { box-shadow: none; }
-`;
-
-function InjectPopupStyle() {
-  useEffect(() => {
-    if (document.getElementById("driver-popup-style")) return;
-    const el = document.createElement("style");
-    el.id = "driver-popup-style";
-    el.textContent = POPUP_STYLE;
-    document.head.appendChild(el);
-  }, []);
-  return null;
-}
-
-// ─── Popup card ───────────────────────────────────────────────────────────────
-
-function DriverPopupCard({ driver }: { driver: AerialDriver }) {
+function DriverMarker({
+  driver,
+  isSelected,
+  onClick,
+}: {
+  driver: AerialDriver;
+  isSelected: boolean;
+  onClick: () => void;
+}) {
   const cfg = STATUS_CONFIG[driver.status];
-  const avatarBg = colorFor(driver.driverId);
   const initials = initialsOf(driver.name);
 
-  function relativeTime(iso: string) {
-    const diff = Date.now() - new Date(iso).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 1) return "just now";
-    if (mins < 60) return `${mins}m ago`;
-    return `${Math.floor(mins / 60)}h ago`;
-  }
-
   return (
-    <div
-      style={{
-        fontFamily: "system-ui,-apple-system,sans-serif",
-        width: 264,
-        background: "#fff",
-        borderRadius: 20,
-        overflow: "hidden",
+    <AdvancedMarker
+      position={{
+        lat: driver.location.coordinates.lat,
+        lng: driver.location.coordinates.lng,
       }}
+      onClick={onClick}
+      zIndex={isSelected ? 100 : 1}
     >
-      {/* Header */}
       <div
-        style={{ padding: "16px 16px 12px", borderBottom: "1px solid #f3f4f6" }}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          cursor: "pointer",
+          transform: isSelected ? "scale(1.2)" : "scale(1)",
+          transition: "transform 0.2s ease",
+        }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ position: "relative", flexShrink: 0 }}>
-            <div
-              style={{
-                width: 56,
-                height: 56,
-                borderRadius: "50%",
-                background: avatarBg,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#fff",
-                fontSize: 18,
-                fontWeight: 700,
-              }}
-            >
-              {initials}
-            </div>
-            {/* Rating badge */}
-            <div
-              style={{
-                position: "absolute",
-                bottom: -4,
-                left: "50%",
-                transform: "translateX(-50%)",
-                background: "#fff",
-                border: "1px solid #e5e7eb",
-                borderRadius: 20,
-                padding: "1px 7px",
-                display: "flex",
-                alignItems: "center",
-                gap: 3,
-                boxShadow: "0 1px 4px rgba(0,0,0,0.10)",
-                whiteSpace: "nowrap",
-              }}
-            >
-              <span style={{ fontSize: 11, fontWeight: 700, color: "#111827" }}>
-                {driver.rating}
-              </span>
-              <svg width="10" height="10" fill="#f59e0b" viewBox="0 0 20 20">
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-              </svg>
-            </div>
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <p
-              style={{
-                margin: 0,
-                fontSize: 15,
-                fontWeight: 700,
-                color: "#111827",
-                lineHeight: 1.3,
-              }}
-            >
-              {driver.name}
-            </p>
-            <p style={{ margin: "2px 0 0", fontSize: 12, color: "#6b7280" }}>
-              {driver.rides} rides
-            </p>
-          </div>
+        {/* Circle */}
+        <div
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: "50%",
+            background: cfg.pinBg,
+            border: `3px solid ${isSelected ? "#fff" : cfg.pinBorder}`,
+            boxShadow: isSelected
+              ? `0 0 0 3px ${cfg.pinBg}, 0 4px 16px rgba(0,0,0,0.35)`
+              : "0 2px 8px rgba(0,0,0,0.3)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "#fff",
+            fontSize: 12,
+            fontWeight: 700,
+            fontFamily: "system-ui, sans-serif",
+          }}
+        >
+          {initials}
+        </div>
+        {/* Pin tail */}
+        <div
+          style={{
+            width: 0,
+            height: 0,
+            borderLeft: "6px solid transparent",
+            borderRight: "6px solid transparent",
+            borderTop: `9px solid ${cfg.pinBg}`,
+            marginTop: -1,
+          }}
+        />
+        {/* Name label */}
+        <div
+          style={{
+            background: "white",
+            borderRadius: 6,
+            padding: "2px 6px",
+            fontSize: 10,
+            fontWeight: 600,
+            color: "#374151",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.15)",
+            marginTop: 3,
+            whiteSpace: "nowrap",
+            fontFamily: "system-ui, sans-serif",
+            border: `1px solid ${cfg.pinBg}22`,
+          }}
+        >
+          {driver.name.split(" ")[0]}
         </div>
       </div>
-
-      {/* Body */}
-      <div style={{ padding: "14px 16px 16px" }}>
-        {/* Status badge */}
-        <div style={{ marginBottom: 14 }}>
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              background:
-                driver.status === "available"
-                  ? "#d1fae5"
-                  : driver.status === "on_ride"
-                    ? "#fef3c7"
-                    : "#f3f4f6",
-              color:
-                driver.status === "available"
-                  ? "#065f46"
-                  : driver.status === "on_ride"
-                    ? "#92400e"
-                    : "#4b5563",
-              borderRadius: 20,
-              padding: "5px 14px",
-              fontSize: 13,
-              fontWeight: 600,
-            }}
-          >
-            <span
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: "50%",
-                background: cfg.dot,
-                display: "inline-block",
-              }}
-            />
-            {cfg.label}
-          </span>
-        </div>
-
-        {/* Location */}
-        <div style={{ borderTop: "1px solid #f3f4f6", paddingTop: 12 }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              marginBottom: 10,
-            }}
-          >
-            <svg
-              width="16"
-              height="16"
-              fill="none"
-              stroke="#0d9488"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-              />
-            </svg>
-            <span style={{ fontSize: 13, fontWeight: 500, color: "#111827" }}>
-              {driver.location.address}
-            </span>
-          </div>
-
-          {/* Last seen */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              borderTop: "1px solid #f3f4f6",
-              paddingTop: 10,
-            }}
-          >
-            <span style={{ fontSize: 12, color: "#9ca3af" }}>Last seen</span>
-            <span style={{ fontSize: 12, fontWeight: 600, color: "#374151" }}>
-              {relativeTime(driver.lastSeen)}
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
+    </AdvancedMarker>
   );
 }
 
-// ─── Map auto-fit ─────────────────────────────────────────────────────────────
+// ─── FitBounds — fires whenever drivers change ────────────────────────────────
 
-function FitBounds({ drivers }: { drivers: AerialDriver[] }) {
+function FitBoundsOnDrivers({ drivers }: { drivers: AerialDriver[] }) {
   const map = useMap();
-  const fitted = useRef(false);
+  const lastCount = useRef(0);
+
   useEffect(() => {
-    if (fitted.current || !drivers.length) return;
-    const bounds = L.latLngBounds(
-      drivers.map((d) => [
-        d.location.coordinates.lat,
-        d.location.coordinates.lng,
-      ]),
-    );
-    map.fitBounds(bounds, { padding: [40, 40] });
-    fitted.current = true;
-  }, [drivers]);
+    // Fit bounds when drivers first load or count changes significantly
+    if (!map || !drivers.length) return;
+    if (
+      lastCount.current > 0 &&
+      Math.abs(drivers.length - lastCount.current) < 3
+    )
+      return;
+
+    lastCount.current = drivers.length;
+
+    const bounds = new google.maps.LatLngBounds();
+    drivers.forEach((d) => {
+      bounds.extend({
+        lat: d.location.coordinates.lat,
+        lng: d.location.coordinates.lng,
+      });
+    });
+
+    // Don't zoom too far in if only 1-2 drivers
+    if (drivers.length === 1) {
+      map.setCenter({
+        lat: drivers[0].location.coordinates.lat,
+        lng: drivers[0].location.coordinates.lng,
+      });
+      map.setZoom(14);
+    } else {
+      map.fitBounds(bounds, { top: 60, right: 60, bottom: 60, left: 60 });
+    }
+  }, [map, drivers.length]);
+
   return null;
 }
 
@@ -398,7 +280,7 @@ function DriverListItem({
   );
 }
 
-// ─── Skeletons ────────────────────────────────────────────────────────────────
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
 
 function SkeletonStatCard() {
   return (
@@ -431,9 +313,9 @@ export default function AerialView() {
   const [selectedDriver, setSelectedDriver] = useState<AerialDriver | null>(
     null,
   );
-  const debouncedSearch = useDebouncedValue(search, 400);
-  const mapRef = useRef<L.Map | null>(null);
 
+  const [mapRef, setMapRef] = useState<google.maps.Map | null>(null);
+  const debouncedSearch = useDebouncedValue(search, 400);
   const queryParams = useMemo(
     () => ({
       search: debouncedSearch || undefined,
@@ -442,30 +324,35 @@ export default function AerialView() {
     [debouncedSearch, filter],
   );
 
-  const { data, isLoading, isError, refetch, isFetching, dataUpdatedAt } =
-    useAerialView(queryParams);
+  const {
+    data,
+    isLoading,
+    isError,
+    refetch,
+    isFetching,
+    isLive,
+    dataUpdatedAt,
+  } = useAerialView(queryParams);
 
   const kpis = data?.kpis;
   const drivers = data?.drivers ?? [];
 
-  // Clear selected driver if it's no longer in the result set
+  // Keep selected driver coords fresh after each refetch
   useEffect(() => {
     if (!selectedDriver) return;
-    const stillExists = drivers.find(
-      (d) => d.driverId === selectedDriver.driverId,
-    );
-    if (!stillExists) setSelectedDriver(null);
-    else setSelectedDriver(stillExists); // keep coords updated
+    const updated = drivers.find((d) => d.driverId === selectedDriver.driverId);
+    if (!updated) setSelectedDriver(null);
+    else setSelectedDriver(updated);
   }, [drivers]);
 
   function flyToDriver(driver: AerialDriver) {
     setSelectedDriver(driver);
-    if (mapRef.current) {
-      mapRef.current.flyTo(
-        [driver.location.coordinates.lat, driver.location.coordinates.lng],
-        14,
-        { duration: 1 },
-      );
+    if (mapRef) {
+      mapRef.panTo({
+        lat: driver.location.coordinates.lat,
+        lng: driver.location.coordinates.lng,
+      });
+      mapRef.setZoom(15);
     }
   }
 
@@ -477,6 +364,8 @@ export default function AerialView() {
       })
     : null;
 
+  const mapId = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID;
+
   return (
     <div className="bg-[#F1F9FB] font-sans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
@@ -485,7 +374,7 @@ export default function AerialView() {
           <div>
             <h1 className="text-xl font-bold text-gray-900">Aerial View</h1>
             <p className="text-sm text-gray-500 mt-0.5">
-              Real-time driver locations
+              Real-time aerial view of all driver locations across Lagos
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -495,13 +384,37 @@ export default function AerialView() {
               </span>
             )}
             <div
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border ${isFetching ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-gray-100 text-gray-500 border-gray-200"}`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border ${isLive ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-50 text-amber-700 border-amber-200"}`}
             >
               <span
-                className={`w-2 h-2 rounded-full ${isFetching ? "bg-emerald-500 animate-pulse" : "bg-gray-400"}`}
+                className={`w-2 h-2 rounded-full ${isLive ? "bg-emerald-500 animate-pulse" : "bg-amber-400"}`}
               />
-              {isFetching ? "Live" : "Idle"}
+              {isLive ? "Live" : "Polling"}
             </div>
+            {isFetching && !isLoading && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border bg-blue-50 text-blue-700 border-blue-200">
+                <svg
+                  className="w-3 h-3 animate-spin"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                  />
+                </svg>
+                Syncing
+              </div>
+            )}
           </div>
         </div>
 
@@ -583,73 +496,229 @@ export default function AerialView() {
               </span>
             </div>
 
-            <div className="relative" style={{ height: "420px" }}>
+            <div style={{ height: 480, position: "relative" }}>
               {isLoading ? (
                 <div className="h-full bg-gray-100 animate-pulse flex items-center justify-center">
                   <p className="text-sm text-gray-400">Loading map...</p>
                 </div>
               ) : (
-                <MapContainer
-                  center={[6.5244, 3.3792]}
-                  zoom={11}
-                  style={{ height: "100%", width: "100%" }}
-                  ref={mapRef as any}
-                  zoomControl={false}
+                <Map
+                  // ── Key fix: Lagos center + tight zoom to show road detail ──
+                  key="aerial-map"
+                  defaultCenter={{ lat: 6.5244, lng: 3.3792 }}
+                  defaultZoom={11}
+                  mapId={mapId}
+                  gestureHandling="greedy"
+                  // ── Don't hide roads/labels — keep the map readable ──────────
+                  // Remove MAP_STYLES entirely so roads show like the Figma
+                  style={{ width: "100%", height: "100%" }}
+                  // ── Use onIdle instead of onLoad (correct @vis.gl API) ───────
+                  onIdle={(e) => {
+                    if (!mapRef) setMapRef(e.map);
+                  }}
                 >
-                  <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  />
-                  <FitBounds drivers={drivers} />
-                  <InjectPopupStyle />
+                  {/* Auto-fit to driver positions when data loads */}
+                  <FitBoundsOnDrivers drivers={drivers} />
 
+                  {/* Driver markers */}
                   {drivers.map((driver) => (
-                    <Marker
+                    <DriverMarker
                       key={driver.driverId}
-                      position={[
-                        driver.location.coordinates.lat,
-                        driver.location.coordinates.lng,
-                      ]}
-                      icon={createDriverIcon(
-                        driver.status,
-                        initialsOf(driver.name),
-                      )}
-                      eventHandlers={{ click: () => setSelectedDriver(driver) }}
-                    >
-                      <Popup
-                        minWidth={260}
-                        maxWidth={280}
-                        className="driver-popup"
-                      >
-                        <DriverPopupCard driver={driver} />
-                      </Popup>
-                    </Marker>
-                  ))}
-                </MapContainer>
-              )}
-
-              {/* Legend */}
-              <div className="absolute bottom-4 left-4 bg-white rounded-xl shadow-lg border border-gray-100 px-3 py-2.5 z-[1000]">
-                <p className="text-xs font-semibold text-gray-600 mb-1.5">
-                  Legend
-                </p>
-                {[
-                  { label: "Available", color: "#10b981" },
-                  { label: "On Ride", color: "#f59e0b" },
-                  { label: "Offline", color: "#9ca3af" },
-                ].map((item) => (
-                  <div
-                    key={item.label}
-                    className="flex items-center gap-2 mb-1 last:mb-0"
-                  >
-                    <span
-                      className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: item.color }}
+                      driver={driver}
+                      isSelected={selectedDriver?.driverId === driver.driverId}
+                      onClick={() =>
+                        setSelectedDriver((prev) =>
+                          prev?.driverId === driver.driverId ? null : driver,
+                        )
+                      }
                     />
-                    <span className="text-xs text-gray-600">{item.label}</span>
+                  ))}
+
+                  {/* InfoWindow on selected driver */}
+                  {selectedDriver && (
+                    <InfoWindow
+                      position={{
+                        lat: selectedDriver.location.coordinates.lat,
+                        lng: selectedDriver.location.coordinates.lng,
+                      }}
+                      onCloseClick={() => setSelectedDriver(null)}
+                      pixelOffset={[0, -65]}
+                    >
+                      <div
+                        style={{
+                          fontFamily: "system-ui",
+                          padding: "4px 2px",
+                          minWidth: 210,
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 10,
+                            marginBottom: 10,
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: "50%",
+                              background: colorFor(selectedDriver.driverId),
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              color: "#fff",
+                              fontSize: 14,
+                              fontWeight: 700,
+                              flexShrink: 0,
+                            }}
+                          >
+                            {initialsOf(selectedDriver.name)}
+                          </div>
+                          <div>
+                            <p
+                              style={{
+                                fontWeight: 700,
+                                fontSize: 14,
+                                margin: 0,
+                                color: "#111827",
+                              }}
+                            >
+                              {selectedDriver.name}
+                            </p>
+                            <p
+                              style={{
+                                fontSize: 11,
+                                color: "#6b7280",
+                                margin: "2px 0 0",
+                              }}
+                            >
+                              {selectedDriver.rides} rides · ⭐{" "}
+                              {selectedDriver.rating}
+                            </p>
+                          </div>
+                        </div>
+                        <div
+                          style={{
+                            borderTop: "1px solid #f3f4f6",
+                            paddingTop: 8,
+                          }}
+                        >
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 5,
+                              padding: "3px 10px",
+                              borderRadius: 20,
+                              fontSize: 11,
+                              fontWeight: 600,
+                              background:
+                                selectedDriver.status === "available"
+                                  ? "#d1fae5"
+                                  : selectedDriver.status === "on_ride"
+                                    ? "#fef3c7"
+                                    : "#f3f4f6",
+                              color:
+                                selectedDriver.status === "available"
+                                  ? "#065f46"
+                                  : selectedDriver.status === "on_ride"
+                                    ? "#92400e"
+                                    : "#4b5563",
+                              marginBottom: 6,
+                            }}
+                          >
+                            <span
+                              style={{
+                                width: 6,
+                                height: 6,
+                                borderRadius: "50%",
+                                background:
+                                  STATUS_CONFIG[selectedDriver.status].dot,
+                                display: "inline-block",
+                              }}
+                            />
+                            {STATUS_CONFIG[selectedDriver.status].label}
+                          </span>
+                          <p
+                            style={{
+                              fontSize: 11,
+                              color: "#374151",
+                              margin: "4px 0 2px",
+                            }}
+                          >
+                            📍 {selectedDriver.location.address}
+                          </p>
+                          <p
+                            style={{
+                              fontSize: 10,
+                              color: "#9ca3af",
+                              margin: 0,
+                            }}
+                          >
+                            Updated {relativeTime(selectedDriver.lastSeen)}
+                          </p>
+                        </div>
+                      </div>
+                    </InfoWindow>
+                  )}
+
+                  {/* Legend overlay — positioned inside map */}
+                  <div
+                    style={{
+                      position: "absolute",
+                      bottom: 28,
+                      left: 16,
+                      background: "white",
+                      borderRadius: 12,
+                      padding: "10px 14px",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                      zIndex: 10,
+                    }}
+                  >
+                    <p
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 600,
+                        color: "#374151",
+                        margin: "0 0 6px",
+                      }}
+                    >
+                      Legend
+                    </p>
+                    {[
+                      { label: "Available", color: "#10b981" },
+                      { label: "On Ride", color: "#f59e0b" },
+                      { label: "Offline", color: "#9ca3af" },
+                    ].map((item) => (
+                      <div
+                        key={item.label}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                          marginBottom: 4,
+                        }}
+                      >
+                        <span
+                          style={{
+                            width: 10,
+                            height: 10,
+                            borderRadius: "50%",
+                            background: item.color,
+                            flexShrink: 0,
+                            display: "inline-block",
+                          }}
+                        />
+                        <span style={{ fontSize: 11, color: "#4b5563" }}>
+                          {item.label}
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </Map>
+              )}
             </div>
           </div>
         )}
@@ -662,7 +731,6 @@ export default function AerialView() {
                 Drivers on Map
               </h2>
 
-              {/* Search */}
               <div className="relative mb-3">
                 <svg
                   className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
@@ -706,7 +774,6 @@ export default function AerialView() {
                 )}
               </div>
 
-              {/* Filter pills */}
               <div className="flex gap-1.5 overflow-x-auto">
                 {(
                   ["All", "Available", "On Ride", "Offline"] as FilterType[]
@@ -752,7 +819,7 @@ export default function AerialView() {
               )}
             </div>
 
-            {/* Selected driver details panel */}
+            {/* Selected driver detail panel */}
             {selectedDriver && (
               <div className="border-t border-gray-100 bg-gray-50 p-4">
                 <div className="flex items-start justify-between mb-3">
@@ -807,8 +874,8 @@ export default function AerialView() {
                       value: `${selectedDriver.rides} rides`,
                     },
                     {
-                      label: "Coordinates",
-                      value: `${selectedDriver.location.coordinates.lat.toFixed(4)}, ${selectedDriver.location.coordinates.lng.toFixed(4)}`,
+                      label: "Last Seen",
+                      value: relativeTime(selectedDriver.lastSeen),
                     },
                   ].map((item) => (
                     <div

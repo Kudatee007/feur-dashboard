@@ -54,11 +54,7 @@ const sidebarSections = [
         icon: Car,
         url: "/rides",
       },
-      // {
-      //   title: "Manual Ride Booking",
-      //   icon: CreditCard,
-      //   url: "/manual-booking",
-      // },
+      { title: "Daily Hire", icon: Car, url: "/daily-hire" },
     ],
   },
 
@@ -111,6 +107,11 @@ const sidebarSections = [
         title: "Aerial View",
         icon: Plane,
         url: "/aerial-view",
+      },
+      {
+        title: "Safety & Incidents",
+        icon: Plane,
+        url: "/safety",
       },
     ],
   },

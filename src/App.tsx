@@ -26,14 +26,18 @@ const Localization = lazy(() => import("./pages/settings/Localization"));
 const EarningsReport = lazy(
   () => import("./pages/vehicles/earnings-report/EarningsReport"),
 );
-const Statements = lazy(
-  () => import("./pages/financial/Statements"),
-);
+const Statements = lazy(() => import("./pages/financial/Statements"));
 const AerialView = lazy(
   () => import("./pages/management/aeriel-view/AerielView"),
 );
+const DailyHire = lazy(() => import("./pages/daily-hire/DailyHire"));
 import Login from "./pages/login/Login";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import SafetyDashboard from "./pages/safety/SafetyDashboard";
+import RouteDeviationDetail from "./pages/safety/RouteDeviationDetail";
+import SOSIncidentDetail from "./pages/safety/SOSIncidentDetail";
+import SOSResponse from "./pages/safety/SOSResponse";
+import SafetyIncidentsQueue from "./pages/safety/SafetyIncidentsQueue";
 
 function PageLoader() {
   return (
@@ -112,6 +116,28 @@ function App() {
                   <Rides />
                 </Suspense>
               }
+            />
+            <Route
+              path="/daily-hire"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <DailyHire />
+                </Suspense>
+              }
+            />
+            <Route path="/safety" element={<SafetyDashboard />} />
+            <Route
+              path="/safety/incidents"
+              element={<SafetyIncidentsQueue />}
+            />
+            <Route path="/safety/sos/:id/respond" element={<SOSResponse />} />
+            <Route
+              path="/safety/sos/:id/detail"
+              element={<SOSIncidentDetail />}
+            />
+            <Route
+              path="/safety/deviation/:id"
+              element={<RouteDeviationDetail />}
             />
             <Route
               path="/vehicle-types"
