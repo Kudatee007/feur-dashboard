@@ -12,36 +12,37 @@ export interface PassengerKpis {
   avgRidesPerUser: number;
 }
 
-export interface PassengerListItem {
-  passengerId: string;
+export interface PassengerDetail {
+  id: string;
+  _id: string;
+  userId: string;
   firstName: string;
   lastName: string;
   email: string;
   phoneNumber: string;
-  location: string;
-  status: string;
-  totalRides: number;
-  totalSpent: number;
-  lastRide: string;
-  vehicle: {
-    model: string;
-    plateNumber: string;
-  } | null;
-}
-
-export interface Pagination {
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
-
-export interface PassengersDashboard {
-  kpis: PassengerKpis;
-  table: {
-    passengers: PassengerListItem[];
-    pagination: Pagination;
-  };
+  dateOfBirth?: string | null;
+  state?: string | null;
+  city?: string | null;
+  gender?: string | null;
+  homeAddress?: string | null;
+  workAddress?: string | null;
+  profilePicture?: string | null;
+  validId?: string | null;
+  ratings?: unknown[];
+  referralCode?: string | null;
+  referredBy?: string | null;
+  status: "active" | "inactive" | "suspended" | "blocked";
+  verificationStatus?: string;
+  accountType?: string;
+  createdAt: string;
+  updatedAt?: string;
+  // normalised field added by the hook
+  passengerId?: string;
+  // these come from the old dashboard detail endpoint — keep optional
+  // so tabs degrade gracefully until those endpoints are wired
+  rideHistory?: PassengerRideHistoryItem[];
+  vehicles?: PassengerVehicle[];
+  payments?: PassengerPayment[];
 }
 
 export interface PassengerRideHistoryItem {
@@ -72,25 +73,35 @@ export interface PassengerPayment {
   transactionRef: string;
 }
 
-export interface PassengerDetail {
-  passengerInfo: {
-    passengerId: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    phoneNumber: string;
-    location: string;
-    status: string;
-    memberSince: string;
+// ─── Dashboard list ───────────────────────────────────────────────────────────
+export interface PassengerListItem {
+  passengerId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string;
+  location: string;
+  status: string;
+  totalRides: number;
+  totalSpent: number;
+  lastRide: string;
+  vehicle: { model: string; plateNumber: string } | null;
+}
+
+
+export interface Pagination {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface PassengersDashboard {
+  kpis: PassengerKpis;
+  table: {
+    passengers: PassengerListItem[];
+    pagination: Pagination;
   };
-  kpis: {
-    totalRides: number;
-    totalSpent: number;
-    lastRide: string;
-  };
-  rideHistory: PassengerRideHistoryItem[];
-  vehicles: PassengerVehicle[];
-  payments: PassengerPayment[];
 }
 
 // ─── Drivers ───────────────────────────────────────────────────────────────

@@ -175,14 +175,38 @@ function PassengerModal({ id, onClose }: { id: string; onClose: () => void }) {
     { key: "payments", label: "Payments" },
   ];
 
-  function handleToggleStatus() {
-    if (!data) return;
-    const current = normalizeStatus(data.passengerInfo.status);
-    const next: OperationalStatus =
-      current === "active" ? "suspended" : "active";
-    updateStatus.mutate({ id, payload: { status: next } });
-  }
+  // ── Normalise real API fields ─────────────────────────────────────────────
+  const passengerId = data?.id ?? data?._id ?? "";
+  const firstName = data?.firstName ?? "";
+  const lastName = data?.lastName ?? "";
+  const fullName = `${firstName} ${lastName}`.trim() || "—";
+  const email = data?.email ?? "—";
+  const phone = data?.phoneNumber ?? "—";
+  const location = data?.city
+    ? `${data.city}${data.state ? `, ${data.state}` : ""}`
+    : (data?.homeAddress ?? "—");
+  const status = data?.status ?? "active";
+  const memberSince = data?.createdAt ?? null;
 
+  // These don't come from /api/v1/passengers/{id} — that endpoint
+  // returns the profile only. Ride history, vehicles, payments would
+  // need separate endpoints when available.
+  const rideHistory: any[] = data?.rideHistory ?? [];
+  const vehicles: any[] = data?.vehicles ?? [];
+  const payments: any[] = data?.payments ?? [];
+
+  function handleToggleStatus() {
+    if (!passengerId) return;
+    const next = status === "active" ? "suspended" : "active";
+    updateStatus.mutate({ id: passengerId, payload: { status: next } });
+  }
+  // function handleToggleStatus() {
+  //   if (!data) return;
+  //   const current = normalizeStatus(data.passengerInfo.status);
+  //   const next: OperationalStatus =
+  //     current === "active" ? "suspended" : "active";
+  //   updateStatus.mutate({ id, payload: { status: next } });
+  // }
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
@@ -220,65 +244,67 @@ function PassengerModal({ id, onClose }: { id: string; onClose: () => void }) {
           </button>
         </div>
 
-        {isLoading ? (
+        {/* Loading */}
+        {isLoading && (
           <div className="p-5 space-y-3 animate-pulse">
             <div className="h-16 bg-gray-100 rounded-xl" />
             <div className="h-24 bg-gray-100 rounded-xl" />
             <div className="h-40 bg-gray-100 rounded-xl" />
           </div>
-        ) : isError || !data ? (
+        )}
+
+        {/* Error */}
+        {!isLoading && (isError || !data) && (
           <div className="p-8 text-center text-sm text-gray-400">
             Failed to load passenger details
           </div>
-        ) : (
+        )}
+
+        {/* Content */}
+        {!isLoading && !isError && data && (
           <>
             {/* Info strip */}
             <div className="px-5 pt-4 pb-3">
               <div className="flex items-center gap-3">
-                <Avatar
-                  id={data.passengerInfo.passengerId}
-                  name={`${data.passengerInfo.firstName} ${data.passengerInfo.lastName}`}
-                  size="lg"
-                />
+                <Avatar id={passengerId} name={fullName} size="lg" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-semibold text-gray-900">
-                      {data.passengerInfo.firstName}{" "}
-                      {data.passengerInfo.lastName}
+                      {fullName}
                     </span>
-                    <StatusBadge status={data.passengerInfo.status} />
+                    <StatusBadge status={status} />
                   </div>
                   <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-gray-500">
-                    <span>{data.passengerInfo.phoneNumber}</span>
-                    <span>{data.passengerInfo.email}</span>
-                    <span>{data.passengerInfo.location}</span>
-                    <span>
-                      Joined{" "}
-                      {new Date(
-                        data.passengerInfo.memberSince,
-                      ).toLocaleDateString()}
-                    </span>
+                    {phone !== "—" && <span>{phone}</span>}
+                    {email !== "—" && <span>{email}</span>}
+                    {location !== "—" && <span>{location}</span>}
+                    {memberSince && (
+                      <span>
+                        Joined {new Date(memberSince).toLocaleDateString()}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
 
+              {/* KPI mini cards — use real fields if present, dash otherwise */}
               <div className="grid grid-cols-3 gap-3 mt-4">
                 <div className="bg-gray-50 rounded-xl p-3">
-                  <p className="text-xs text-gray-400">🚗 Total Rides</p>
-                  <p className="font-bold text-gray-900 text-sm mt-0.5">
-                    {data.kpis.totalRides}
+                  <p className="text-xs text-gray-400">🆔 Passenger ID</p>
+                  <p className="font-bold text-gray-900 text-xs mt-0.5 truncate">
+                    {passengerId || "—"}
                   </p>
                 </div>
                 <div className="bg-gray-50 rounded-xl p-3">
-                  <p className="text-xs text-gray-400">💳 Total Spent</p>
-                  <p className="font-bold text-gray-900 text-sm mt-0.5">
-                    {fmtCurrency(data.kpis.totalSpent)}
+                  <p className="text-xs text-gray-400">📋 Account Type</p>
+                  <p className="font-bold text-gray-900 text-sm mt-0.5 capitalize">
+                    {data.accountType ?? "passenger"}
                   </p>
                 </div>
                 <div className="bg-gray-50 rounded-xl p-3">
-                  <p className="text-xs text-gray-400">🕐 Last Ride</p>
-                  <p className="font-bold text-gray-900 text-sm mt-0.5">
-                    {relativeTime(data.kpis.lastRide)}
+                  <p className="text-xs text-gray-400">✅ Verification</p>
+                  <p className="font-bold text-gray-900 text-xs mt-0.5 capitalize">
+                    {(data.verificationStatus ?? "—").replace(/_/g, " ")}
                   </p>
                 </div>
               </div>
@@ -291,7 +317,11 @@ function PassengerModal({ id, onClose }: { id: string; onClose: () => void }) {
                   <button
                     key={t.key}
                     onClick={() => setTab(t.key)}
-                    className={`px-3 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${tab === t.key ? "border-orange-500 text-orange-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+                    className={`px-3 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                      tab === t.key
+                        ? "border-orange-500 text-orange-600"
+                        : "border-transparent text-gray-500 hover:text-gray-700"
+                    }`}
                   >
                     {t.label}
                   </button>
@@ -301,69 +331,99 @@ function PassengerModal({ id, onClose }: { id: string; onClose: () => void }) {
 
             {/* Tab content */}
             <div className="flex-1 overflow-y-auto p-5 space-y-3">
+              {/* Overview */}
               {tab === "overview" && (
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-gray-50 rounded-xl p-3">
-                    <p className="text-xs text-gray-400 mb-1">Passenger ID</p>
-                    <p className="font-semibold text-gray-900 text-sm">
-                      {data.passengerInfo.passengerId}
-                    </p>
-                  </div>
-                  <div className="bg-gray-50 rounded-xl p-3">
-                    <p className="text-xs text-gray-400 mb-1">Account Status</p>
-                    <StatusBadge status={data.passengerInfo.status} />
-                  </div>
-                  <div className="bg-gray-50 rounded-xl p-3">
-                    <p className="text-xs text-gray-400 mb-1">Member Since</p>
-                    <p className="font-semibold text-gray-900 text-sm">
-                      {new Date(
-                        data.passengerInfo.memberSince,
-                      ).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div className="bg-gray-50 rounded-xl p-3">
-                    <p className="text-xs text-gray-400 mb-1">Location</p>
-                    <p className="font-semibold text-gray-900 text-sm">
-                      {data.passengerInfo.location}
-                    </p>
-                  </div>
+                  {[
+                    { label: "Passenger ID", value: passengerId },
+                    {
+                      label: "Account Status",
+                      value: <StatusBadge status={status} />,
+                    },
+                    { label: "First Name", value: firstName || "—" },
+                    { label: "Last Name", value: lastName || "—" },
+                    { label: "Email", value: email },
+                    { label: "Phone", value: phone },
+                    { label: "Gender", value: data.gender ?? "—" },
+                    { label: "Date of Birth", value: data.dateOfBirth ?? "—" },
+                    { label: "City", value: data.city ?? "—" },
+                    { label: "State", value: data.state ?? "—" },
+                    { label: "Home Address", value: data.homeAddress ?? "—" },
+                    { label: "Referral Code", value: data.referralCode ?? "—" },
+                    {
+                      label: "Member Since",
+                      value: memberSince
+                        ? new Date(memberSince).toLocaleDateString()
+                        : "—",
+                    },
+                    {
+                      label: "Verification",
+                      value: (data.verificationStatus ?? "—").replace(
+                        /_/g,
+                        " ",
+                      ),
+                    },
+                  ].map((item) => (
+                    <div key={item.label} className="bg-gray-50 rounded-xl p-3">
+                      <p className="text-xs text-gray-400 mb-1">{item.label}</p>
+                      {typeof item.value === "string" ? (
+                        <p className="font-semibold text-gray-900 text-sm break-words">
+                          {item.value}
+                        </p>
+                      ) : (
+                        item.value
+                      )}
+                    </div>
+                  ))}
                 </div>
               )}
 
+              {/* Ride History */}
               {tab === "ride-history" && (
                 <div className="space-y-2.5">
-                  {data.rideHistory.length === 0 ? (
-                    <p className="text-center text-gray-400 text-sm py-8">
-                      No rides yet
-                    </p>
+                  {rideHistory.length === 0 ? (
+                    <div className="py-10 text-center">
+                      <p className="text-sm text-gray-400">
+                        No ride history available
+                      </p>
+                      <p className="text-xs text-gray-300 mt-1">
+                        Ride history requires a separate endpoint
+                      </p>
+                    </div>
                   ) : (
-                    data.rideHistory.map((ride) => (
+                    rideHistory.map((ride: any) => (
                       <div
-                        key={ride.rideId}
+                        key={ride.rideId ?? ride.id}
                         className="bg-gray-50 rounded-xl p-3"
                       >
                         <div className="flex items-start justify-between">
                           <div>
                             <p className="font-medium text-gray-900 text-sm">
-                              {ride.rideId}
+                              {ride.rideId ?? ride.id}
                             </p>
                             <p className="text-xs text-gray-500 mt-0.5">
-                              Driver: {ride.driverName}
+                              Driver: {ride.driverName ?? "—"}
                             </p>
+                            {ride.route && (
+                              <p className="text-xs text-gray-400">
+                                {ride.route.pickup} → {ride.route.dropoff}
+                              </p>
+                            )}
                             <p className="text-xs text-gray-400">
-                              {ride.route.pickup} → {ride.route.dropoff}
-                            </p>
-                            <p className="text-xs text-gray-400">
-                              {new Date(ride.date).toLocaleDateString()}
+                              {ride.date
+                                ? new Date(ride.date).toLocaleDateString()
+                                : "—"}
                             </p>
                           </div>
                           <div className="text-right">
                             <p className="font-semibold text-gray-900 text-sm">
-                              {fmtCurrency(ride.fare)}
+                              {ride.fare != null ? fmtCurrency(ride.fare) : "—"}
                             </p>
-                            <p className="text-xs text-amber-500">
-                              {ride.rating} ★
-                            </p>
+                            {ride.rating != null && (
+                              <p className="text-xs text-amber-500">
+                                {ride.rating} ★
+                              </p>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -372,16 +432,22 @@ function PassengerModal({ id, onClose }: { id: string; onClose: () => void }) {
                 </div>
               )}
 
+              {/* Vehicles */}
               {tab === "vehicles" && (
                 <div className="space-y-2.5">
-                  {data.vehicles.length === 0 ? (
-                    <p className="text-center text-gray-400 text-sm py-8">
-                      No vehicles registered
-                    </p>
+                  {vehicles.length === 0 ? (
+                    <div className="py-10 text-center">
+                      <p className="text-sm text-gray-400">
+                        No vehicles registered
+                      </p>
+                      <p className="text-xs text-gray-300 mt-1">
+                        Vehicle data requires a separate endpoint
+                      </p>
+                    </div>
                   ) : (
-                    data.vehicles.map((v) => (
+                    vehicles.map((v: any) => (
                       <div
-                        key={v.id}
+                        key={v.id ?? v._id}
                         className="bg-gray-50 rounded-xl p-3 flex items-center gap-3"
                       >
                         <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center text-lg">
@@ -389,13 +455,15 @@ function PassengerModal({ id, onClose }: { id: string; onClose: () => void }) {
                         </div>
                         <div className="flex-1">
                           <p className="font-semibold text-gray-900 text-sm">
-                            {v.make} {v.model} {v.year}
+                            {[v.make, v.model, v.year]
+                              .filter(Boolean)
+                              .join(" ") || "—"}
                           </p>
                           <p className="text-xs text-gray-400 mt-0.5">
-                            Plate: {v.plateNumber}
+                            Plate: {v.plateNumber ?? "—"}
                           </p>
                           <p className="text-xs text-gray-400">
-                            Color: {v.color}
+                            Color: {v.color ?? "—"}
                           </p>
                         </div>
                       </div>
@@ -404,36 +472,46 @@ function PassengerModal({ id, onClose }: { id: string; onClose: () => void }) {
                 </div>
               )}
 
+              {/* Payments */}
               {tab === "payments" && (
                 <div className="space-y-2">
-                  {data.payments.length === 0 ? (
-                    <p className="text-center text-gray-400 text-sm py-8">
-                      No payment records
-                    </p>
+                  {payments.length === 0 ? (
+                    <div className="py-10 text-center">
+                      <p className="text-sm text-gray-400">
+                        No payment records
+                      </p>
+                      <p className="text-xs text-gray-300 mt-1">
+                        Payment data requires a separate endpoint
+                      </p>
+                    </div>
                   ) : (
-                    data.payments.map((p) => (
+                    payments.map((p: any) => (
                       <div
-                        key={p.paymentId}
+                        key={p.paymentId ?? p.id}
                         className="bg-gray-50 rounded-xl p-3 flex items-center justify-between"
                       >
                         <div>
                           <p className="text-sm font-medium text-gray-900">
-                            {p.transactionRef}
+                            {p.transactionRef ?? p.id ?? "—"}
                           </p>
                           <p className="text-xs text-gray-400">
-                            {p.paymentMethod}
+                            {p.paymentMethod ?? "—"}
                           </p>
                           <p className="text-xs text-gray-400">
-                            {new Date(p.completedAt).toLocaleDateString()}
+                            {p.completedAt
+                              ? new Date(p.completedAt).toLocaleDateString()
+                              : "—"}
                           </p>
                         </div>
                         <div className="text-right">
                           <p className="font-semibold text-gray-900 text-sm">
-                            {fmtCurrency(p.amount)}
+                            {p.amount != null ? fmtCurrency(p.amount) : "—"}
                           </p>
-                          <span className="text-xs text-emerald-600 mt-0.5">
-                            {p.status}
-                          </span>
+                          {p.status && (
+                            <span className="text-xs text-emerald-600">
+                              {p.status}
+                            </span>
+                          )}
                         </div>
                       </div>
                     ))
@@ -446,12 +524,16 @@ function PassengerModal({ id, onClose }: { id: string; onClose: () => void }) {
             <div className="px-5 py-4 border-t border-gray-100 flex items-center gap-3">
               <button
                 onClick={handleToggleStatus}
-                disabled={updateStatus.isPending}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-colors disabled:opacity-50 ${normalizeStatus(data.passengerInfo.status) === "active" ? "bg-red-500 hover:bg-red-600 text-white" : "bg-emerald-500 hover:bg-emerald-600 text-white"}`}
+                disabled={updateStatus.isPending || !passengerId}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-colors disabled:opacity-50 ${
+                  normalizeStatus(status) === "active"
+                    ? "bg-red-500 hover:bg-red-600 text-white"
+                    : "bg-emerald-500 hover:bg-emerald-600 text-white"
+                }`}
               >
                 {updateStatus.isPending
                   ? "Updating..."
-                  : normalizeStatus(data.passengerInfo.status) === "active"
+                  : normalizeStatus(status) === "active"
                     ? "Suspend Account"
                     : "Reactivate Account"}
               </button>
@@ -462,6 +544,7 @@ function PassengerModal({ id, onClose }: { id: string; onClose: () => void }) {
                 Close
               </button>
             </div>
+
             {updateStatus.isError && (
               <p className="px-5 pb-3 text-xs text-red-500">
                 Failed to update status. Try again.
